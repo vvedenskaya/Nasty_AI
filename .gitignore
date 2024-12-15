@@ -1,0 +1,53 @@
+    # Byte-compiled files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+env/
+venv/
+*.env
+*.venv
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+*.out
+*.err
+
+# Cache and temporary files
+*.cache
+*.tmp
+*.bak
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Python-specific files
+*.egg-info/
+*.eggs/
+dist/
+build/
+pip-wheel-metadata/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Coverage and test reports
+htmlcov/
+.coverage
+.cache/
+.nox/
+.tox/
+
+# Docker
+*.pid
+
+# Miscellaneous
+*.lock

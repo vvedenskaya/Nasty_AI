@@ -1,0 +1,114 @@
+/* Общие стили */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: black;
+    color: green;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* Эффект матрицы - на заднем плане */
+canvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+
+/* Контейнер для чата */
+#chat-container {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 80vh;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Сообщения в чате */
+#chat-container p {
+    margin: 5px 0;
+}
+
+/* Контейнер для ввода */
+#input-container {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: black;
+    border-top: 1px solid green;
+}
+
+/* Поле для ввода */
+#input-container input[type="text"] {
+    width: 90%;
+    padding: 10px;
+    background-color: black;
+    color: green;
+    border: 1px solid green;
+    font-size: 16px;
+}
+
+/* Кнопка отправки */
+#input-container input[type="submit"] {
+    width: 8%;
+    background-color: green;
+    color: black;
+    border: 1px solid green;
+    cursor: pointer;
+}
+
+#input-container input[type="submit"]:hover {
+    background-color: black;
+    color: green;
+}
+
+/* Эффект для текста (глитч) */
+.glitch {
+    animation: glitch-anim 1s infinite;
+}
+
+@keyframes glitch-anim {
+    0% {
+        text-shadow: -1px 0 red, 1px 0 blue;
+        transform: translate(2px, 0);
+    }
+    20% {
+        text-shadow: 1px 0 red, -1px 0 blue;
+        transform: translate(-2px, 0);
+    }
+    40% {
+        text-shadow: 1px 0 green, -1px 0 yellow;
+        transform: translate(1px, 0);
+    }
+    60% {
+        text-shadow: -1px 0 yellow, 1px 0 green;
+        transform: translate(-1px, 0);
+    }
+    80% {
+        text-shadow: 2px 0 red, -2px 0 blue;
+        transform: translate(2px, 0);
+    }
+    100% {
+        text-shadow: -1px 0 red, 1px 0 blue;
+        transform: translate(-2px, 0);
+    }
+}
+
+
+
+
+
+
+
+

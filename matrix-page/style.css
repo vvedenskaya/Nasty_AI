@@ -1,0 +1,62 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: black;
+    color: green;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* Стили для полотна с эффектом матрицы */
+canvas {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Стили для формы ввода */
+.chat-form {
+    position: fixed;
+    bottom: 20px;  /* Положение внизу экрана */
+    left: 20px;
+    z-index: 1000; /* Увеличен z-index для более высокой видимости */
+    background-color: rgba(0, 0, 0, 0.8); /* Полупрозрачный черный фон */
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid green;
+}
+
+input[type="text"] {
+    background-color: black;
+    color: green;
+    border: 1px solid green;
+    padding: 10px;
+    font-size: 16px;
+    width: 300px; /* Ширина поля */
+}
+
+input[type="submit"] {
+    background-color: green;
+    color: black;
+    border: 1px solid green;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+input[type="submit"]:hover {
+    background-color: black;
+    color: green;
+}
+
+
+
+
+
+
+
+
+
