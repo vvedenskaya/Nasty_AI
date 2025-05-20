@@ -56,7 +56,6 @@ sex_traffik_facts = [
 
 women_expected_behaviour = [
     "Women apologizing frequently is linked to societal pressure to maintain harmony and appear agreeable.",
-    "Women apologizing frequently is linked to societal pressure to maintain harmony and appear agreeable.",
     "Empathy is seen as innate in women, leading to overburdening them with caregiving roles.",
     "Women are expected to smile more frequently than men, often regardless of their mood.",
     "Women leaders must balance authority with warmth, while men can demonstrate power without it.",
@@ -77,7 +76,9 @@ invisible_woman = [
 
 
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = " "
+
+#openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def get_random_vq_question():
     return random.choice(voight_kampff_questions)
@@ -116,7 +117,7 @@ def chat():
 
 
     try:
-        client = openai.OpenAI()
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
