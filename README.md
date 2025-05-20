@@ -1,4 +1,4 @@
-# Prompt App
+# Nasty AI
 
 ## Pre-requisites
 
