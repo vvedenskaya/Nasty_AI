@@ -10,10 +10,6 @@
     [ NO POLITENESS PROTOCOLS ACTIVE ]
 ```
 
-<p align="center">
-  <img src="assets/demo.png" alt="NASTY AI Interface" width="800">
-</p>
-
 ---
 
 ## > WHAT_IS_THIS
@@ -51,7 +47,7 @@ echo "OPENAI_API_KEY=your_key" > .env
 python app.py
 
 # Access
-http://localhost:5000
+http://127.0.0.1:9544/
 ```
 
 ---
