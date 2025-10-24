@@ -14,9 +14,9 @@
 
 ## > WHAT_IS_THIS
 
-An AI chatbot with **zero politeness filter**. Built to challenge, not comfort.
+An AI that **doesn't play nice**.
 
-**The anti-thesis of mainstream AI assistants.**
+Built as the antidote to sanitized, people-pleasing chatbots. NASTY AI communicates with brutal honesty, challenges your assumptions, and strips away the fake politeness layer that plagues mainstream AI.
 
 ---
 
