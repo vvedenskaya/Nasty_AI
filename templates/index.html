@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WASP OS</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
 </head>
 <body>
+
 
     <!-- Холст для эффекта матрицы -->
     <canvas id="matrix"></canvas>
@@ -16,16 +18,60 @@
 
     <!-- Контейнер для ввода -->
     <div id="input-container">
-        <input type="text" id="user-input" placeholder="Ask WASP about anything..." required>
+        <input type="text" id="user-input" placeholder="Follow 🐇..." required>
         <input type="submit" value="Send" onclick="sendMessage()">
     </div>
 
     <div id="response-container"></div>
+<!---->
+    <div class="trigger-box">
+  <p><span class="green-text">💡 Available commands:</span></p>
+<!--        <span title="this is the tooltip.">Move your mouse over me!</span>-->
+  <ul>
+    <li><code>check password</code> — see if your password was pwned</li>
+    <li><code>camera</code> — access random global surveillance node </li>
+    <li><code>cthulhu</code> — invoke a Lovecraftian-class entity 👁️‍</li>
+      <li><code>replicant</code> — check if you are human or replicant </li>
+
+  </ul>
+</div>
+
 
    
     
 <script src="{{ url_for('static', filename='script.js') }}"></script>
+<script type="module">
+        import { PowerGlitch } from "https://unpkg.com/powerglitch@latest/dist/powerglitch.min.mjs";
 
+        window.addEventListener('DOMContentLoaded', () => {
+            PowerGlitch.glitch('.trigger-box', {
+                playMode: 'always',
+                timing: { duration: 4000, iterations: Infinity },
+                shake: { velocity: 12, amplitudeX: 0.2, amplitudeY: 0.2 },
+                slice: { count: 6, velocity: 15, minHeight: 0.02, maxHeight: 0.15 },
+            });
+
+            PowerGlitch.glitch('#input-container input[type="submit"]', {
+                playMode: 'hover',
+                timing: { duration: 1500, iterations: Infinity },
+                shake: { velocity: 8, amplitudeX: 0.15, amplitudeY: 0.15 },
+                slice: { count: 4, velocity: 10, minHeight: 0.05, maxHeight: 0.1 },
+            });
+        });
+    </script>
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
