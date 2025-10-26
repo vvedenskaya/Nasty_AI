@@ -7,8 +7,8 @@
     ██║ ╚████║██║  ██║███████║   ██║      ██║   
     ╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝   ╚═╝      ╚═╝   
     
-    [ NO POLITENESS PROTOCOLS ACTIVE ]
 ```
+![Screen](assets/22.jpeg)
 
 ---
 
@@ -17,6 +17,7 @@
 An AI that **doesn't play nice**.
 
 Built as the antidote to sanitized, people-pleasing chatbots. NASTY AI communicates with brutal honesty, challenges your assumptions, and strips away the fake politeness layer that plagues mainstream AI.
+![Screen](assets/photo_2024-10-14_20-47-43.jpg)
 
 ---
 
