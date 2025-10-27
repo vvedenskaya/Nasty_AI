@@ -61,10 +61,3 @@ Most AIs are programmed to be polite, safe, and boring.
 
 Not rude. Just honest. The way conversations should be.
 
----
-```
-
-
-
-
-
