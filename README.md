@@ -33,7 +33,7 @@ Built as the antidote to sanitized, people-pleasing chatbots. NASTY AI communica
 ## > TECH_STACK
 ```
 Backend:  Flask + OpenAI GPT-4
-Frontend: HTML/CSS/JS + Canvas animations
+Frontend: HTML/CSS/JS 
 ```
 
 ---
@@ -45,10 +45,10 @@ pip install flask openai python-dotenv
 echo "OPENAI_API_KEY=your_key" > .env
 
 # Run
-python app.py
+python app2.py
 
 # Access
-http://127.0.0.1:9544/
+[[http://127.0.0.1:5000/]]
 ```
 
 ---
