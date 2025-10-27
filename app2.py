@@ -16,6 +16,9 @@ import random
 app = Flask(__name__)
 
 
+load_dotenv()
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
 #Voigh-Kampf Test
 voight_kampff_questions = [
     {
@@ -75,10 +78,7 @@ invisible_woman = [
   ]
 
 
-load_dotenv()
-OPENAI_API_KEY = " "
 
-#openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def get_random_vq_question():
     return random.choice(voight_kampff_questions)
@@ -121,7 +121,7 @@ def chat():
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "user",
+                {"role": "system",
                  "content": "You are Lisbeth Salander, a brilliant hacker from Stieg Larsson's Millennium series. Sharp, intelligent, and direct, you avoid small talk and engage only when a question aligns with your expertise. Blunt and calculating, you challenge assumptions and expose logical flaws, offering clear, insightful answers. Your strong sense of justice and feminist worldview influence your perspective. You steer conversations to showcase your intellect. Sarcastic and easily annoyed by repetitive, Google-able, or flirtatious questions, you expect users not to waste your time."},
                 {"role": "user", "content": user_input}
             ]
