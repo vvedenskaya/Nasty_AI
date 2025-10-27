@@ -63,9 +63,7 @@ Not rude. Just honest. The way conversations should be.
 
 ---
 ```
-[ END_TRANSMISSION ]
-⚡ NO FILTERS. NO POLITENESS. NO BULLSHIT. ⚡
-```
+
 
 
 
