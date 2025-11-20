@@ -45,18 +45,6 @@ function sendMessage() {
         // Add user message
         addMessage('user', message);
 
-
-
-
-
-
-
-
-
-
-
-
-
         // Simulate root WASP response
         setTimeout(() => {
             addMessage('root', generateWaspResponse(message));
@@ -73,15 +61,23 @@ function addMessage(sender, text) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+function getUserId() {
+    let userId = localStorage.getItem('lisbeth_user_id');
+    if (!userId) {
+        userId = 'user_' + Date.now();
+        localStorage.setItem('lisbeth_user_id', userId);
+    }
+    return userId;
+}
+
 function sendMessage() {
     const userMessage = document.getElementById('user-input').value;
-
     fetch('/chat', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: userMessage}),
+        body: JSON.stringify({ message: userMessage, user_id:getUserId()}),
     })
     .then(response => response.json())
     .then(data => {
