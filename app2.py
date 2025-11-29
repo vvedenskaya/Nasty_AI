@@ -225,7 +225,7 @@ def add_to_chat_history(user_id, role, message):
         "timestamp": datetime.now().isoformat()
     })
     
-    MAX_HISTORY = 20
+    MAX_HISTORY = 100
     if len(user.recent_chat_history) > MAX_HISTORY:
         user.recent_chat_history = user.recent_chat_history[-MAX_HISTORY:]
     
