@@ -17,7 +17,7 @@ db = SQLAlchemy(app)
 load_dotenv()
 # OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 # client = openai.OpenAI(api_key=OPENAI_API_KEY)
-openai.api_key = os.environ.get("OPENAI_API_KEY") 
+openai.api_key = os.environ.get("OPENAI_API_KEY").strip()
 
 
 # ============================================================================
