@@ -15,8 +15,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 load_dotenv()
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+# OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+# client = openai.OpenAI(api_key=OPENAI_API_KEY)
+openai.api_key = os.environ.get("OPENAI_API_KEY") 
+
 
 # ============================================================================
 # DATABASE MODEL
@@ -99,8 +101,8 @@ def update_user_profile(user_id, user_input):
     print(f"\n  📝 LEVEL 1 - Extracting PROFILE facts from: '{user_input[:60]}...'")
     
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
             messages=[
                 {
                     "role": "system",
@@ -123,8 +125,7 @@ Only fields with information, rest null. Keep old values if not contradicted by 
             temperature=0.2,
             max_tokens=200
         )
-        
-        result_text = response.choices[0].message.content.replace("```json", "").replace("```", "").strip()
+        result_text = response['choices'][0]['message']['content'].replace("```json", "").replace("```", "").strip()        
         new_profile = json.loads(result_text)
         
         print(f"    ➜ GPT extracted: {json.dumps(new_profile, ensure_ascii=False)}")
@@ -155,8 +156,8 @@ def update_topic_summaries(user_id, user_input, ai_response):
     print(f"\n  📚 LEVEL 2 - Extracting TOPICS from: '{user_input[:60]}...'")
     
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
             messages=[
                 {
                     "role": "system",
@@ -175,7 +176,7 @@ Return ONLY JSON (no markdown):
             temperature=0.3,
             max_tokens=300
         )        
-        result_text = response.choices[0].message.content.replace("```json", "").replace("```", "").strip()
+        result_text = response['choices'][0]['message']['content'].replace("```json", "").replace("```", "").strip()
         topic_data = json.loads(result_text)
         
         print(f"    ➜ GPT extracted topic: '{topic_data.get('main_topic')}'")
@@ -294,8 +295,8 @@ def analyze_character_evolution(user_id, user_input, ai_response, user_history):
     print(f"\n  🎭 ANALYZING CHARACTER EVOLUTION...")
     
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
             messages=[
                 {
                     "role": "system",
@@ -329,7 +330,7 @@ Return ONLY JSON (no markdown):
             max_tokens=200
         )
 
-        result_text = response.choices[0].message.content.replace("```json", "").replace("```", "").strip()
+        result_text = response['choices'][0]['message']['content'].replace("```json", "").replace("```", "").strip()
         evolution = json.loads(result_text)
         evo = user.character_evolution
         
@@ -472,8 +473,8 @@ def chat():
         messages.append({"role": "user", "content": user_input})
         
         print(f"📤 Sending to GPT-4o-mini with {len(messages)} messages in context")
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
             messages=messages
         )
 
