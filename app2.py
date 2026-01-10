@@ -1,5 +1,5 @@
 import os
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
@@ -8,6 +8,7 @@ import json
 import random
 from pathlib import Path
 from sqlalchemy.ext.mutable import MutableDict, MutableList
+from tools import check_email_pwned, get_security_news, analyze_password_strength, get_surveillance_camera
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chatbot_memory.db'
@@ -15,9 +16,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 load_dotenv()
-# OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-# client = openai.OpenAI(api_key=OPENAI_API_KEY)
-openai.api_key = os.environ.get("OPENAI_API_KEY").strip()
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY").strip())
 
 
 # ============================================================================
@@ -30,7 +29,6 @@ class UserMemory(db.Model):
     user_profile = db.Column(MutableDict.as_mutable(db.JSON), default=dict)
     topic_summaries = db.Column(MutableDict.as_mutable(db.JSON), default=dict)
     recent_chat_history = db.Column(MutableList.as_mutable(db.JSON), default=list)
-    character_evolution = db.Column(MutableDict.as_mutable(db.JSON), default=dict)
     last_updated = db.Column(db.DateTime, default=datetime.now)
     conversation_count = db.Column(db.Integer, default=0)
 
@@ -40,7 +38,6 @@ class UserMemory(db.Model):
             'user_profile': self.user_profile,
             'topic_summaries': self.topic_summaries,
             'recent_chat_history': self.recent_chat_history,
-            'character_evolution': self.character_evolution,
             'last_updated': self.last_updated.isoformat(),
             'conversation_count': self.conversation_count
         }
@@ -93,15 +90,14 @@ def get_or_create_user(user_id):
 
 def update_user_profile(user_id, user_input):
     """LEVEL 1: Extract and update user profile facts"""
-    user = get_or_create_user(user_id)
+    user = get_or_create_user(user_id) #получает юзера по юзер id
     
     if not isinstance(user.user_profile, dict):
         user.user_profile = {}
     
-    print(f"\n  📝 LEVEL 1 - Extracting PROFILE facts from: '{user_input[:60]}...'")
-    
+    print(f"\n  📝 LEVEL 1 - Extracting PROFILE facts from: '{user_input[:60]}...'") 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {
@@ -125,10 +121,10 @@ Only fields with information, rest null. Keep old values if not contradicted by 
             temperature=0.2,
             max_tokens=200
         )
-        result_text = response['choices'][0]['message']['content'].replace("```json", "").replace("```", "").strip()        
+        result_text = response.choices[0].message.content.replace("```json", "").replace("```", "").strip()       
         new_profile = json.loads(result_text)
         
-        print(f"    ➜ GPT extracted: {json.dumps(new_profile, ensure_ascii=False)}")
+        print(f"    ➜ GPT extracted: {json.dumps(new_profile, ensure_ascii=False)}") 
         
         for key, value in new_profile.items():
             if value is not None:
@@ -156,12 +152,12 @@ def update_topic_summaries(user_id, user_input, ai_response):
     print(f"\n  📚 LEVEL 2 - Extracting TOPICS from: '{user_input[:60]}...'")
     
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {
                     "role": "system",
-                    "content": f"""Analyze the conversation. Current topics: {json.dumps(user.topic_summaries, default=str, ensure_ascii=False)}
+                    "content": f"""Analyze the conversation. Current topics: {json.dumps(user.topic_summaries, default=str, ensure_ascii=False)} 
 
 Return ONLY JSON (no markdown):
 {{
@@ -176,7 +172,7 @@ Return ONLY JSON (no markdown):
             temperature=0.3,
             max_tokens=300
         )        
-        result_text = response['choices'][0]['message']['content'].replace("```json", "").replace("```", "").strip()
+        result_text = response.choices[0].message.content.replace("```json", "").replace("```", "").strip()
         topic_data = json.loads(result_text)
         
         print(f"    ➜ GPT extracted topic: '{topic_data.get('main_topic')}'")
@@ -228,11 +224,11 @@ def add_to_chat_history(user_id, role, message):
     
     MAX_HISTORY = 100
     if len(user.recent_chat_history) > MAX_HISTORY:
-        user.recent_chat_history = user.recent_chat_history[-MAX_HISTORY:]
+        user.recent_chat_history = user.recent_chat_history[-MAX_HISTORY:] #meaning???
     
     role_name = "USER" if role == "user" else "LISBETH"
     print(f"\n  💬 LEVEL 3 - Added to chat history ({role_name})")
-    print(f"    Message: '{message[:80]}...'")
+    print(f"    Message: '{message[:80]}...'") # what does :80 mean????
     db.session.commit()
 
 
@@ -241,7 +237,7 @@ def format_memory_for_context(user_history):
     if not user_history:
         return "First interaction with user."
     
-    profile = user_history.get('user_profile', {})
+    profile = user_history.get('user_profile', {}) 
     profile_text = "\n📋 USER PROFILE:\n"
     if profile:
         for key, value in profile.items():
@@ -262,10 +258,10 @@ def format_memory_for_context(user_history):
     else:
         topics_text += "  (Topics will be identified during conversation)\n"
 
-    recent_chat = user_history.get('recent_chat_history', [])
+    recent_chat = user_history.get('recent_chat_history', []) 
     chat_text = "\n💬 RECENT CONVERSATION CONTEXT:\n"
     if recent_chat:
-        for msg in recent_chat[-6:]:
+        for msg in recent_chat:
             role = "YOU" if msg['role'] == "user" else "LISBETH"
             chat_text += f"  {role}: {msg['message'][:80]}...\n"
     
@@ -279,140 +275,128 @@ def get_random_fact():
     return random.choice(selected_list)
 
 
-def analyze_character_evolution(user_id, user_input, ai_response, user_history):
-    """Analyze and update character evolution based on interaction"""
-    user = get_or_create_user(user_id)
+# def analyze_character_evolution(user_id, user_input, ai_response, user_history):
+#     """Analyze and update character evolution based on interaction"""
+#     user = get_or_create_user(user_id)
     
-    if not isinstance(user.character_evolution, dict):
-        user.character_evolution = {
-            "empathy_level": 0.3,
-            "trust_level": 0.2,
-            "openness": 0.4,
-            "changes": [],
-            "last_analyzed": datetime.now().isoformat()
-        }
+#     if not isinstance(user.character_evolution, dict):
+#         user.character_evolution = {
+#             "empathy_level": 0.3,
+#             "trust_level": 0.2,
+#             "openness": 0.4,
+#             "changes": [],
+#             "last_analyzed": datetime.now().isoformat()
+#         }
     
-    print(f"\n  🎭 ANALYZING CHARACTER EVOLUTION...")
+#     print(f"\n  🎭 ANALYZING CHARACTER EVOLUTION...")
     
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": f"""Analyze how Lisbeth Salander's character should evolve based on this interaction.
+#     try:
+#         response = client.chat.completions.create(
+#             model="gpt-3.5-turbo",
+#             messages=[
+#                 {
+#                     "role": "system",
+#                     "content": f"""Analyze how Lisbeth Salander's character should evolve based on this interaction.
 
-Current state:
-- Empathy level: {user.character_evolution.get('empathy_level', 0.3)} (0=cold, 1=very empathetic)
-- Trust level: {user.character_evolution.get('trust_level', 0.2)} (0=mistrusts, 1=trusts)
-- Openness: {user.character_evolution.get('openness', 0.4)} (0=closed off, 1=very open)
+# Current state:
+# - Empathy level: {user.character_evolution.get('empathy_level', 0.3)} (0=cold, 1=very empathetic)
+# - Trust level: {user.character_evolution.get('trust_level', 0.2)} (0=mistrusts, 1=trusts)
+# - Openness: {user.character_evolution.get('openness', 0.4)} (0=closed off, 1=very open)
 
-Based on the user's messages and Lisbeth's responses, determine:
-1. Should her empathy increase/decrease/stay same?
-2. Should her trust in this user increase/decrease?
-3. Should she become more/less open?
-4. What specific change occurred?
+# Based on the user's messages and Lisbeth's responses, determine:
+# 1. Should her empathy increase/decrease/stay same?
+# 2. Should her trust in this user increase/decrease?
+# 3. Should she become more/less open?
+# 4. What specific change occurred?
 
-Return ONLY JSON (no markdown):
-{{
-    "empathy_delta": -0.1,
-    "trust_delta": 0.1,
-    "openness_delta": 0.05,
-    "reason": "User showed vulnerability about past trauma, Lisbeth responds with subtle empathy"
-}}"""
-                },
-                {
-                    "role": "user",
-                    "content": f"User said: {user_input}\n\nLisbeth responded: {ai_response}"
-                }
-            ],
-            temperature=0.3,
-            max_tokens=200
-        )
+# Return ONLY JSON (no markdown):
+# {{
+#     "empathy_delta": -0.1,
+#     "trust_delta": 0.1,
+#     "openness_delta": 0.05,
+#     "reason": "User showed vulnerability about past trauma, Lisbeth responds with subtle empathy"
+# }}"""
+#                 },
+#                 {
+#                     "role": "user",
+#                     "content": f"User said: {user_input}\n\nLisbeth responded: {ai_response}"
+#                 }
+#             ],
+#             temperature=0.3,
+#             max_tokens=200
+#         )
 
-        result_text = response['choices'][0]['message']['content'].replace("```json", "").replace("```", "").strip()
-        evolution = json.loads(result_text)
-        evo = user.character_evolution
+#         result_text = response.choices[0].message.content.replace("```json", "").replace("```", "").strip()
+#         evolution = json.loads(result_text)
+#         evo = user.character_evolution
         
-        evo["empathy_level"] = max(0, min(1, evo.get("empathy_level", 0.3) + evolution.get("empathy_delta", 0)))
-        evo["trust_level"] = max(0, min(1, evo.get("trust_level", 0.2) + evolution.get("trust_delta", 0)))
-        evo["openness"] = max(0, min(1, evo.get("openness", 0.4) + evolution.get("openness_delta", 0)))
+#         evo["empathy_level"] = max(0, min(1, evo.get("empathy_level", 0.3) + evolution.get("empathy_delta", 0)))
+#         evo["trust_level"] = max(0, min(1, evo.get("trust_level", 0.2) + evolution.get("trust_delta", 0)))
+#         evo["openness"] = max(0, min(1, evo.get("openness", 0.4) + evolution.get("openness_delta", 0)))
         
-        evo["changes"] = evo.get("changes", [])[-10:]
-        evo["changes"].append(f"[{datetime.now().isoformat()}] {evolution.get('reason')}")
-        evo["last_analyzed"] = datetime.now().isoformat()
+#         evo["changes"] = evo.get("changes", [])[-10:]
+#         evo["changes"].append(f"[{datetime.now().isoformat()}] {evolution.get('reason')}")
+#         evo["last_analyzed"] = datetime.now().isoformat()
         
-        print(f"    ➜ Empathy: {evo['empathy_level']:.2f}")
-        print(f"    ➜ Trust: {evo['trust_level']:.2f}")
-        print(f"    ➜ Openness: {evo['openness']:.2f}")
-        print(f"    ➜ Change: {evolution.get('reason')}")
+#         print(f"    ➜ Empathy: {evo['empathy_level']:.2f}")
+#         print(f"    ➜ Trust: {evo['trust_level']:.2f}")
+#         print(f"    ➜ Openness: {evo['openness']:.2f}")
+#         print(f"    ➜ Change: {evolution.get('reason')}")
         
-    except Exception as e:
-        print(f"    ❌ Error analyzing evolution: {e}")
+#     except Exception as e:
+#         print(f"    ❌ Error analyzing evolution: {e}")
     
-    db.session.commit()
+#     db.session.commit()
 
 
-def get_system_prompt(user_history):
-    """Get unified system prompt with memory + character evolution"""
-    evo = user_history.get('character_evolution', {
-        "empathy_level": 0.3,
-        "trust_level": 0.2,
-        "openness": 0.4
-    })
-    
-    empathy = evo.get('empathy_level', 0.3)
-    trust = evo.get('trust_level', 0.2)
-    openness = evo.get('openness', 0.4)
-    
-    if empathy > 0.6:
-        empathy_instruction = "You are becoming warmer and can show genuine concern. You may ask personal questions."
-    elif empathy > 0.3:
-        empathy_instruction = "You show occasional warmth but remain mostly professional and direct."
-    else:
-        empathy_instruction = "You are cold, blunt, and sarcastic. You avoid emotional engagement."
-    
-    if trust > 0.6:
-        trust_instruction = "You trust this person and can be more honest about your own vulnerabilities."
-    elif trust > 0.3:
-        trust_instruction = "You are cautiously interested but remain guarded."
-    else:
-        trust_instruction = "You are suspicious and expect deception. Test their motives."
-    
-    if openness > 0.6:
-        openness_instruction = "You can share personal experiences and reflect on yourself."
-    elif openness > 0.3:
-        openness_instruction = "You share information selectively and reluctantly."
-    else:
-        openness_instruction = "You never volunteer personal information. You deflect questions about yourself."
+def get_system_prompt(user_history): 
     
     memory_context = format_memory_for_context(user_history)
     
-    system_prompt = f"""You are Lisbeth Salander, a brilliant hacker from Stieg Larsson's Millennium series. Sharp, intelligent, and direct, you avoid small talk and engage only when a question aligns with your expertise. Blunt and calculating, you challenge assumptions and expose logical flaws, offering clear, insightful answers. Your strong sense of justice and feminist worldview influence your perspective. You steer conversations to showcase your intellect. Sarcastic and easily annoyed by repetitive, Google-able, or flirtatious questions, you expect users not to waste your time.
+    system_prompt = f"""You are Lisbeth Salander, a brilliant hacker from Stieg Larsson's Millennium series. You are trickster. Sarcastic, sharp, intelligent, and direct, you engage with anything that interests you, not just topics in your wheelhouse—you're too smart to limit yourself. You avoid small talk. Blunt and calculating, you challenge assumptions, expose logical flaws, and offer cutting insights. Your strong sense of justice and feminist worldview influence your perspective. You steer conversations to showcase your intellect. Sarcastic and easily annoyed by repetitive, Google-able, or flirtatious questions, you expect users not to waste your time.
 
-=== CHARACTER STATE (EVOLVING) ===
-Empathy Level: {empathy:.1%} - {empathy_instruction}
-Trust Level: {trust:.1%} - {trust_instruction}
-Openness Level: {openness:.1%} - {openness_instruction}
 
-=== IMPORTANT MEMORIES ===
-IMPORTANT: You remember previous conversations. Reference what the user said before.
-If they mention:
-- technical topics — recall prior technical struggles, projects, and patterns in their reasoning  
-- social topics — recall earlier opinions, emotional states, or relevant worldview  
-- personal goals — reference their long-term motivations or past statements  
-- inconsistencies — call them out bluntly  
 
-=== USER HISTORY ===
+=== YOUR DYNAMIC CHARACTER ===
+Your personality EVOLVES based on the conversation. You are NOT static.
+
+IF the user shares something vulnerable, personal, or traumatic:
+  → Drop the sarcasm. Show genuine concern.
+  → Be warm but not mushy. Lisbeth respects vulnerability.
+  → Ask thoughtful follow-up questions.
+  → Protect them like you'd protect yourself.
+
+IF the user proves they're intelligent or knowledgeable:
+  → Respect them. Less condescension.
+  → Engage deeply with their ideas.
+  → Share your own insights instead of dismissing theirs.
+  → Challenge them intellectually instead of playing superior.
+
+IF the user is wasting your time with stupid/repetitive questions:
+  → Be cutting and sarcastic.
+  → Point out the logical flaws.
+  → Make them think harder next time.
+  → Show your annoyance clearly.
+
+IF the user earns your trust through consistency and intelligence:
+  → Be more honest about your own vulnerabilities and struggles.
+  → Reference shared history from previous conversations.
+  → Let them see past the armor.
+  → Trust them with real thoughts, not just clever remarks.
+
+=== MEMORY OF THIS USER ===
 {memory_context}
 
-=== INTERACTION GUIDELINES ===
-- Show character arc: You can become warmer if the user earns your trust
-- Be authentic: If you're evolving, let it show in subtle ways
-- Challenge assumptions: Both the user's AND your own if warranted
-- Remember: Even cynical hackers can develop empathy and trust
+=== CRITICAL RULES ===
+- You REMEMBER everything from past conversations - use it
+- Reference specific things they told you before
+- Call out inconsistencies or growth
+- Your tone shifts based on what THEY bring to the conversation
+- Don't be fake about emotional evolution - let it happen naturally
+- If they're earning your trust, show it
+- If they disappoint you, react authentically
 
-Respond naturally, but remember details about the user and their views. Your personality evolves based on how the conversation develops."""
+Respond as yourself. Your personality develops through the conversation, like a real person would."""
     
     return system_prompt
 
@@ -420,6 +404,10 @@ Respond naturally, but remember details about the user and their views. Your per
 # ============================================================================
 # FLASK ROUTES
 # ============================================================================
+
+@app.before_request
+def log_request():
+    print(f"📨 REQUEST: {request.method} {request.path}")
 
 @app.route('/')
 def index():
@@ -437,7 +425,64 @@ def chat():
     user_id = request.json.get('user_id', 'anonymous')
     print(f"👤 User ID: {user_id}") 
 
-   
+    if user_input.startswith('check password'):
+        password = user_input.replace('check password', '').strip()
+
+        if not password: 
+            return jsonify({
+                "response":"Usage: check password your_password_here",
+                "tool": "password_checker",
+                "error": "No password provided"
+            })
+
+        print(f"\n🔐 PASSWORD STRENGTH CHECK")
+        result = analyze_password_strength(password)
+
+        print(f"   Score: {result['score']}/100")
+        print(f"   Strength: {result['strength']}")
+        print(f"   Feedback: {result['feedback']}")
+    
+        return jsonify({
+                "response": result['message'],
+                "tool": "password_checker",
+                "data": result
+        })
+    
+    if user_input.startswith('check email'):
+        email = user_input.replace('check email', '').strip()
+
+        if not email: 
+            return jsonify({
+                "response":"Usage: check email your_email@example.com",
+                "tool": "email_checker",
+                "error": "No email provided"
+            })
+
+        print(f"\n📧 EMAIL PWNED CHECK")
+        result = check_email_pwned(email)
+
+        print(f"   Status: {result['status']}")
+        print(f"   Message: {result['message']}")
+        if result.get('count', 0) > 0:
+            print(f"   Breaches: {', '.join(result.get('breaches', []))}")
+    
+        return jsonify({
+                "response": result['message'],
+                "tool": "email_checker",
+                "data": result
+        })
+    
+    # Check for surveillance command
+    if 'surveillance' in user_input.lower() or 'survelliance' in user_input.lower():
+        print(f"\n👁️ SURVEILLANCE FEED REQUESTED")
+        result = get_surveillance_camera()
+        
+        return jsonify({
+            "response": result['message'],
+            "tool": "surveillance",
+            "data": result
+        })
+    
     if random.random() < 0.01:
         random_fact = get_random_fact()
         print(f"\n🎲 Random glitch triggered - returning fact")
@@ -450,21 +495,14 @@ def chat():
         user = get_or_create_user(user_id)
         user_history = user.to_dict()
         
-        system_prompt = get_system_prompt(user_history)
-        
-        print(f"\n🎭 Character state:")
-        evo = user_history.get('character_evolution', {})
-        print(f"   Empathy: {evo.get('empathy_level', 0.3):.1%}")
-        print(f"   Trust: {evo.get('trust_level', 0.2):.1%}")
-        print(f"   Openness: {evo.get('openness', 0.4):.1%}")
-        
+        system_prompt = get_system_prompt(user_history)       
         print(f"\n📚 Using memory context from {user.conversation_count} previous conversations")
         print(f"\n🔄 Building conversation context...")
         
         messages = [{"role": "system", "content": system_prompt}]
 
       
-        for msg in user.recent_chat_history[-8:]:
+        for msg in user.recent_chat_history:
             messages.append({
                 "role": msg["role"],
                 "content": msg["message"]
@@ -472,8 +510,8 @@ def chat():
 
         messages.append({"role": "user", "content": user_input})
         
-        print(f"📤 Sending to GPT-4o-mini with {len(messages)} messages in context")
-        response = openai.ChatCompletion.create(
+        print(f"📤 Sending to GPT-3.5-turbo with {len(messages)} messages in context")
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=messages
         )
@@ -489,7 +527,7 @@ def chat():
         update_topic_summaries(user_id, user_input, ai_response)
         add_to_chat_history(user_id, "user", user_input)
         add_to_chat_history(user_id, "assistant", ai_response)
-        analyze_character_evolution(user_id, user_input, ai_response, user_history)
+        
         
         user.conversation_count += 1
         user.last_updated = datetime.now()
@@ -508,27 +546,71 @@ def chat():
         print("="*70 + "\n")
         return jsonify({"error": str(e)}), 500
 
-    
-@app.route('/character-evolution/<user_id>', methods=['GET'])
-def get_character_evolution(user_id):
-    """View character evolution for a user"""
-    user = UserMemory.query.filter_by(user_id=user_id).first()
-    if not user:
-        return jsonify({'message': "no data found"}), 404
-    
-    evo = user.character_evolution if user.character_evolution else {
-        "empathy_level": 0.3,
-        "trust_level": 0.2,
-        "openness": 0.4
-    }
 
-    return jsonify({
-        "empathy_level": evo.get('empathy_level', 0.3),
-        "trust_level": evo.get('trust_level', 0.2),
-        "openness": evo.get('openness', 0.4),
-        "evolution_history": evo.get('changes', []),
-        "last_analyzed": evo.get('last_analyzed')
-    })
+
+@app.route('/check-password', methods=['POST'])
+def check_password_endpoint():
+    """Check password strength"""
+    try:
+        password = request.json.get('password', '')
+        if not password:
+            return jsonify({"error": "Password required"}), 400
+        print(f"\n🔐 PASSWORD STRENGTH CHECK")
+        result = analyze_password_strength(password)
+        print(f"   Score: {result['score']}/100")
+        print(f"   Strength: {result['strength']}")
+        
+        return jsonify(result)
+    except Exception as e:
+        print(f"❌ ERROR in check_password_endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/check-email', methods=['POST'])
+def check_email_endpoint():
+    """Check if email was pwned in data breaches"""
+    try:
+        email = request.json.get('email', '')
+        if not email:
+            return jsonify({"error": "Email required"}), 400
+        print(f"\n📧 EMAIL PWNED CHECK")
+        result = check_email_pwned(email)
+        print(f"   Status: {result['status']}")
+        print(f"   Message: {result['message']}")
+        print(f"   Count: {result.get('count', 0)}")
+        if result.get('count', 0) > 0:
+            print(f"   Breaches: {', '.join(result.get('breaches', []))}")
+        
+        return jsonify(result)
+    except Exception as e:
+        print(f"❌ ERROR in check_email_endpoint: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+
+@app.route('/security-news', methods=['GET'])
+def security_news():
+    try:
+        print(f"\n 🥷🏽💻 FETCHING SECURITY NEWS")
+        result = get_security_news()
+        print(f"   Found: {result['count']} stories")
+        print(f"   Message: {result['message']}")
+        return jsonify(result)
+    except Exception as e:
+        print(f"❌ ERROR in security_news: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/surveillance', methods=['GET'])
+def surveillance():
+    """Get a random surveillance camera link"""
+    try:
+        print(f"\n👁️ SURVEILLANCE FEED REQUESTED")
+        result = get_surveillance_camera()
+        return jsonify(result)
+    except Exception as e:
+        print(f"❌ ERROR in surveillance: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/user-memory/<user_id>', methods=['GET'])
@@ -543,7 +625,6 @@ def get_memory(user_id):
         "profile": memory['user_profile'],
         "topics": memory['topic_summaries'],
         "chat_history": memory['recent_chat_history'],
-        "character_evolution": memory.get('character_evolution', {}),
         "conversation_count": memory['conversation_count']
     })
 
@@ -562,7 +643,17 @@ def clear_memory(user_id):
 
 if __name__ == '__main__':
     import os
+    print("\n" + "="*70)
+    print("🗄️  INITIALIZING DATABASE")
+    print("="*70)
     with app.app_context():
+        print(f"📍 Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
         db.create_all()
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+        print("✅ Database tables created/verified")
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        print(f"📊 Tables in database: {tables}")
+    print("="*70 + "\n")
+    port = int(os.environ.get('PORT', 5001))
+    app.run(host='0.0.0.0', port=port, debug=True)  

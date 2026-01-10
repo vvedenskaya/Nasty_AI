@@ -28,10 +28,12 @@
   <p><span class="green-text">💡 Available commands:</span></p>
 <!--        <span title="this is the tooltip.">Move your mouse over me!</span>-->
   <ul>
-    <li><code>check password</code> — see if your password was pwned</li>
-    <li><code>camera</code> — access random global surveillance node </li>
-    <li><code>cthulhu</code> — invoke a Lovecraftian-class entity 👁️‍</li>
-      <li><code>replicant</code> — check if you are human or replicant </li>
+    <li><code>check password</code> — see how strong is your password</li>
+    <li><code>check email</code> — see if your email was pwned</li>
+    <li><code>hacker news</code> — access random global surveillance node </li>
+    <li><code>surveillance</code> — random surveillance camera feed</li>
+    
+    
 
   </ul>
 </div>
@@ -39,7 +41,7 @@
 
    
     
-<script src="{{ url_for('static', filename='script.js') }}"></script>
+<script src="{{ url_for('static', filename='script.js') }}?v=2"></script>
 <script type="module">
         import { PowerGlitch } from "https://unpkg.com/powerglitch@latest/dist/powerglitch.min.mjs";
 
