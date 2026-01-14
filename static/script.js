@@ -39,6 +39,48 @@ setInterval(drawMatrix, 35);
 // Chat logic
 const chatContainer = document.getElementById('chat-container');
 const userInput = document.getElementById('user-input');
+const suggestionsContainer = document.getElementById('command-suggestions');
+
+const availableCommands = [
+    { name: 'check password', desc: 'see if your password was leaked in data breaches', example: 'check password 123456' },
+    { name: 'security news', desc: 'fetch latest cybersecurity news', example: 'security news' },
+    { name: 'surveillance', desc: 'access random surveillance camera feed', example: 'surveillance' }
+];
+
+let selectedIndex = -1;
+
+function showSuggestions(filter = '') {
+    const filtered = availableCommands.filter(cmd => 
+        cmd.name.toLowerCase().includes(filter.toLowerCase())
+    );
+
+    if (filtered.length === 0) {
+        suggestionsContainer.classList.add('hidden');
+        return;
+    }
+
+    suggestionsContainer.innerHTML = '';
+    filtered.forEach((cmd, index) => {
+        const div = document.createElement('div');
+        div.className = 'command-item';
+        if (index === selectedIndex) div.classList.add('selected');
+        
+        div.innerHTML = `
+            <span class="command-name">/${cmd.name}</span>
+            <span class="command-desc">${cmd.desc}</span>
+        `;
+        
+        div.onclick = () => {
+            userInput.value = cmd.name + ' ';
+            suggestionsContainer.classList.add('hidden');
+            userInput.focus();
+        };
+        
+        suggestionsContainer.appendChild(div);
+    });
+
+    suggestionsContainer.classList.remove('hidden');
+}
 
 // function sendMessage() {
 //     const message = userInput.value.trim();
@@ -177,12 +219,12 @@ function sendMessage() {
             const loadingEl = document.getElementById(loadingId);
             if (result.error) {
                 loadingEl.innerHTML = `<strong>🔐 Tool:</strong> ❌ Error: ${result.error}`;
-            } else if (result.feedback && Array.isArray(result.feedback)) {
-                const feedbackList = result.feedback.map(f => `  • ${f}`).join('\n');
-                const formattedResult = `${result.message}\n\nScore: ${result.score}/100\nStrength: ${result.strength}\n\nFeedback:\n${feedbackList}`;
-                loadingEl.innerHTML = `<strong>🔐 Tool:</strong><pre>${formattedResult}</pre>`;
             } else {
-                loadingEl.innerHTML = `<strong>🔐 Tool:</strong> ${result.message || JSON.stringify(result)}`;
+                let formattedResult = result.message;
+                if (result.status === 'COMPROMISED') {
+                    formattedResult += `\n\nOccurrences found: ${result.found}`;
+                }
+                loadingEl.innerHTML = `<strong>🔐 Tool:</strong><pre>${formattedResult}</pre>`;
             }
             chatContainer.scrollTop = chatContainer.scrollHeight;
             sendBtn.disabled = false;
@@ -391,6 +433,13 @@ userInput.addEventListener('input', function(event) {
     const value = this.value;
     const lowerValue = value.toLowerCase();
     
+    if (value.startsWith('/')) {
+        const query = value.slice(1);
+        showSuggestions(query);
+    } else {
+        suggestionsContainer.classList.add('hidden');
+    }
+    
     // Check if user is typing "check password" followed by space and password
     const passwordMatch = value.match(/^(check password)\s+(.+)$/i);
     
@@ -416,7 +465,38 @@ userInput.addEventListener('input', function(event) {
 
 // Event listener for user input submission
 userInput.addEventListener('keydown', function(event) {
-    if (event.key === 'Enter') {
+    const items = suggestionsContainer.querySelectorAll('.command-item');
+    
+    if (!suggestionsContainer.classList.contains('hidden')) {
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            selectedIndex = (selectedIndex + 1) % items.length;
+            showSuggestions(userInput.value.slice(1));
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+            showSuggestions(userInput.value.slice(1));
+        } else if (event.key === 'Enter' && selectedIndex >= 0) {
+            event.preventDefault();
+            const cmdName = items[selectedIndex].querySelector('.command-name').textContent.slice(1);
+            userInput.value = cmdName + ' ';
+            suggestionsContainer.classList.add('hidden');
+            selectedIndex = -1;
+        } else if (event.key === 'Escape') {
+            suggestionsContainer.classList.add('hidden');
+            selectedIndex = -1;
+        } else if (event.key === 'Enter') {
+            sendMessage();
+        }
+    } else if (event.key === 'Enter') {
         sendMessage();
+    }
+});
+
+// Close suggestions when clicking outside
+document.addEventListener('click', function(event) {
+    if (!userInput.contains(event.target) && !suggestionsContainer.contains(event.target)) {
+        suggestionsContainer.classList.add('hidden');
+        selectedIndex = -1;
     }
 });

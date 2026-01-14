@@ -44,10 +44,56 @@ canvas {
     z-index: 2;
     width: 100%;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column; /* Изменено для выпадающего списка */
     padding: 10px;
     background-color: black;
     border-top: 1px solid green;
+}
+
+.input-wrapper {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+/* Выпадающий список команд */
+#command-suggestions {
+    position: absolute;
+    bottom: 100%; /* Прямо над полем ввода */
+    left: 10px;
+    width: calc(90% - 20px);
+    background-color: rgba(0, 0, 0, 0.95);
+    border: 1px solid green;
+    border-bottom: none;
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#command-suggestions.hidden {
+    display: none;
+}
+
+.command-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.command-item:hover, .command-item.selected {
+    background-color: rgba(0, 255, 0, 0.2);
+}
+
+.command-name {
+    font-weight: bold;
+    color: #0F0;
+}
+
+.command-desc {
+    font-size: 12px;
+    color: rgba(0, 255, 0, 0.7);
 }
 
 /* Поле для ввода */

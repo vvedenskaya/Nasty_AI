@@ -18,8 +18,11 @@
 
     <!-- Контейнер для ввода -->
     <div id="input-container">
-        <input type="text" id="user-input" placeholder="Follow 🐇..." required>
-        <input type="submit" value="Send" onclick="sendMessage()">
+        <div id="command-suggestions" class="hidden"></div>
+        <div class="input-wrapper">
+            <input type="text" id="user-input" placeholder="Type / for commands or follow 🐇..." required autocomplete="off">
+            <input type="submit" value="Send" onclick="sendMessage()">
+        </div>
     </div>
 
     <div id="response-container"></div>
@@ -28,9 +31,8 @@
   <p><span class="green-text">💡 Available commands:</span></p>
 <!--        <span title="this is the tooltip.">Move your mouse over me!</span>-->
   <ul>
-    <li><code>check password</code> — see how strong is your password</li>
-    <li><code>check email</code> — see if your email was pwned</li>
-    <li><code>hacker news</code> — access random global surveillance node </li>
+    <li><code>check password</code> — see if your password was leaked in data breaches</li>
+    <li><code>hacker news</code> — fetch latest cybersecurity news </li>
     <li><code>surveillance</code> — random surveillance camera feed</li>
     
     

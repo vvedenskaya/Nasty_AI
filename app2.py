@@ -8,7 +8,7 @@ import json
 import random
 from pathlib import Path
 from sqlalchemy.ext.mutable import MutableDict, MutableList
-from tools import check_email_pwned, get_security_news, analyze_password_strength, get_surveillance_camera
+from tools import get_security_news, analyze_password_strength, get_surveillance_camera, check_password_breach
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chatbot_memory.db'
@@ -550,15 +550,15 @@ def chat():
 
 @app.route('/check-password', methods=['POST'])
 def check_password_endpoint():
-    """Check password strength"""
+    """Check if password was found in data breaches"""
     try:
         password = request.json.get('password', '')
         if not password:
             return jsonify({"error": "Password required"}), 400
-        print(f"\n🔐 PASSWORD STRENGTH CHECK")
-        result = analyze_password_strength(password)
-        print(f"   Score: {result['score']}/100")
-        print(f"   Strength: {result['strength']}")
+        print(f"\n🔐 PASSWORD BREACH CHECK")
+        result = check_password_breach(password)
+        print(f"   Status: {result['status']}")
+        print(f"   Found: {result.get('found', 0)} times")
         
         return jsonify(result)
     except Exception as e:
@@ -566,25 +566,25 @@ def check_password_endpoint():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/check-email', methods=['POST'])
-def check_email_endpoint():
-    """Check if email was pwned in data breaches"""
-    try:
-        email = request.json.get('email', '')
-        if not email:
-            return jsonify({"error": "Email required"}), 400
-        print(f"\n📧 EMAIL PWNED CHECK")
-        result = check_email_pwned(email)
-        print(f"   Status: {result['status']}")
-        print(f"   Message: {result['message']}")
-        print(f"   Count: {result.get('count', 0)}")
-        if result.get('count', 0) > 0:
-            print(f"   Breaches: {', '.join(result.get('breaches', []))}")
+# @app.route('/check-email', methods=['POST'])
+# def check_email_endpoint():
+#     """Check if email was pwned in data breaches"""
+#     try:
+#         email = request.json.get('email', '')
+#         if not email:
+#             return jsonify({"error": "Email required"}), 400
+#         print(f"\n📧 EMAIL PWNED CHECK")
+#         result = check_email_pwned(email)
+#         print(f"   Status: {result['status']}")
+#         print(f"   Message: {result['message']}")
+#         print(f"   Count: {result.get('count', 0)}")
+#         if result.get('count', 0) > 0:
+#             print(f"   Breaches: {', '.join(result.get('breaches', []))}")
         
-        return jsonify(result)
-    except Exception as e:
-        print(f"❌ ERROR in check_email_endpoint: {e}")
-        return jsonify({"error": str(e)}), 500
+#         return jsonify(result)
+#     except Exception as e:
+#         print(f"❌ ERROR in check_email_endpoint: {e}")
+#         return jsonify({"error": str(e)}), 500
 
 
 
