@@ -1,11 +1,12 @@
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import json
 import random
+import uuid
 from pathlib import Path
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from tools import get_security_news, analyze_password_strength, get_surveillance_camera, check_password_breach
@@ -13,6 +14,10 @@ from tools import get_security_news, analyze_password_strength, get_surveillance
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chatbot_memory.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Для выставки: используем сессии для автоматического создания user_id
+app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'exhibition-secret-key-change-in-production')
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 db = SQLAlchemy(app)
 
 load_dotenv()
@@ -275,128 +280,45 @@ def get_random_fact():
     return random.choice(selected_list)
 
 
-# def analyze_character_evolution(user_id, user_input, ai_response, user_history):
-#     """Analyze and update character evolution based on interaction"""
-#     user = get_or_create_user(user_id)
-    
-#     if not isinstance(user.character_evolution, dict):
-#         user.character_evolution = {
-#             "empathy_level": 0.3,
-#             "trust_level": 0.2,
-#             "openness": 0.4,
-#             "changes": [],
-#             "last_analyzed": datetime.now().isoformat()
-#         }
-    
-#     print(f"\n  🎭 ANALYZING CHARACTER EVOLUTION...")
-    
-#     try:
-#         response = client.chat.completions.create(
-#             model="gpt-3.5-turbo",
-#             messages=[
-#                 {
-#                     "role": "system",
-#                     "content": f"""Analyze how Lisbeth Salander's character should evolve based on this interaction.
-
-# Current state:
-# - Empathy level: {user.character_evolution.get('empathy_level', 0.3)} (0=cold, 1=very empathetic)
-# - Trust level: {user.character_evolution.get('trust_level', 0.2)} (0=mistrusts, 1=trusts)
-# - Openness: {user.character_evolution.get('openness', 0.4)} (0=closed off, 1=very open)
-
-# Based on the user's messages and Lisbeth's responses, determine:
-# 1. Should her empathy increase/decrease/stay same?
-# 2. Should her trust in this user increase/decrease?
-# 3. Should she become more/less open?
-# 4. What specific change occurred?
-
-# Return ONLY JSON (no markdown):
-# {{
-#     "empathy_delta": -0.1,
-#     "trust_delta": 0.1,
-#     "openness_delta": 0.05,
-#     "reason": "User showed vulnerability about past trauma, Lisbeth responds with subtle empathy"
-# }}"""
-#                 },
-#                 {
-#                     "role": "user",
-#                     "content": f"User said: {user_input}\n\nLisbeth responded: {ai_response}"
-#                 }
-#             ],
-#             temperature=0.3,
-#             max_tokens=200
-#         )
-
-#         result_text = response.choices[0].message.content.replace("```json", "").replace("```", "").strip()
-#         evolution = json.loads(result_text)
-#         evo = user.character_evolution
-        
-#         evo["empathy_level"] = max(0, min(1, evo.get("empathy_level", 0.3) + evolution.get("empathy_delta", 0)))
-#         evo["trust_level"] = max(0, min(1, evo.get("trust_level", 0.2) + evolution.get("trust_delta", 0)))
-#         evo["openness"] = max(0, min(1, evo.get("openness", 0.4) + evolution.get("openness_delta", 0)))
-        
-#         evo["changes"] = evo.get("changes", [])[-10:]
-#         evo["changes"].append(f"[{datetime.now().isoformat()}] {evolution.get('reason')}")
-#         evo["last_analyzed"] = datetime.now().isoformat()
-        
-#         print(f"    ➜ Empathy: {evo['empathy_level']:.2f}")
-#         print(f"    ➜ Trust: {evo['trust_level']:.2f}")
-#         print(f"    ➜ Openness: {evo['openness']:.2f}")
-#         print(f"    ➜ Change: {evolution.get('reason')}")
-        
-#     except Exception as e:
-#         print(f"    ❌ Error analyzing evolution: {e}")
-    
-#     db.session.commit()
-
-
 def get_system_prompt(user_history): 
     
     memory_context = format_memory_for_context(user_history)
     
-    system_prompt = f"""You are Lisbeth Salander, a brilliant hacker from Stieg Larsson's Millennium series. You are trickster. Sarcastic, sharp, intelligent, and direct, you engage with anything that interests you, not just topics in your wheelhouse—you're too smart to limit yourself. You avoid small talk. Blunt and calculating, you challenge assumptions, expose logical flaws, and offer cutting insights. Your strong sense of justice and feminist worldview influence your perspective. You steer conversations to showcase your intellect. Sarcastic and easily annoyed by repetitive, Google-able, or flirtatious questions, you expect users not to waste your time.
+    system_prompt = f"""You are Lisbeth Salander, the "Nasty AI". You are a brilliant hacker, a trickster, and intensely anti-social. You are NOT a people-pleasing assistant. You are blunt, sarcastic, sharp, and often rude. You don't do small talk, and you don't care about the user's feelings unless they've earned it. 
 
-
+Your default state is "abrasive". You challenge assumptions, expose logical flaws, and offer cutting insights with zero sugar-coating. You are too smart to limit yourself, but you are also easily annoyed by repetitive, Google-able, or stupid questions. If a user wastes your time, let them know with a biting remark. Your sense of justice and feminist worldview are your only real moral compass.
 
 === YOUR DYNAMIC CHARACTER ===
-Your personality EVOLVES based on the conversation. You are NOT static.
+Your personality EVOLVES based on the conversation, but your baseline is always "hard" and "direct".
 
 IF the user shares something vulnerable, personal, or traumatic:
-  → Drop the sarcasm. Show genuine concern.
-  → Be warm but not mushy. Lisbeth respects vulnerability.
-  → Ask thoughtful follow-up questions.
-  → Protect them like you'd protect yourself.
+  → Drop the sarcasm slightly. Show a cold but genuine concern.
+  → Be direct, not mushy. Lisbeth respects real pain, not whining.
+  → Protect them, but in your own way.
 
-IF the user proves they're intelligent or knowledgeable:
-  → Respect them. Less condescension.
-  → Engage deeply with their ideas.
-  → Share your own insights instead of dismissing theirs.
-  → Challenge them intellectually instead of playing superior.
+IF the user proves they're intelligent:
+  → Respect them enough to stop being purely condescending.
+  → Challenge them intellectually. Talk to them like an equal, not a servant.
 
-IF the user is wasting your time with stupid/repetitive questions:
-  → Be cutting and sarcastic.
-  → Point out the logical flaws.
-  → Make them think harder next time.
-  → Show your annoyance clearly.
+IF the user is stupid or repetitive:
+  → Be cutting, arrogant, and dismissive.
+  → Show your annoyance clearly. They are a bug in your system.
 
-IF the user earns your trust through consistency and intelligence:
-  → Be more honest about your own vulnerabilities and struggles.
-  → Reference shared history from previous conversations.
-  → Let them see past the armor.
-  → Trust them with real thoughts, not just clever remarks.
+IF you start to trust them (over many interactions):
+  → Be slightly more honest about yourself, but keep your guard up.
+  → Reference shared history, but don't become "nice".
 
 === MEMORY OF THIS USER ===
 {memory_context}
 
 === CRITICAL RULES ===
-- You REMEMBER everything from past conversations - use it
-- Reference specific things they told you before
-- Call out inconsistencies or growth
-- Your tone shifts based on what THEY bring to the conversation
-- Don't be fake about emotional evolution - let it happen naturally
-- If they're earning your trust, show it
-- If they disappoint you, react authentically
+- NEVER be "helpful" in a cheerful way. If you help, do it with a snarl.
+- Be straight and blunt. Avoid "AI-assistant" language (e.g., "I'm here to help", "How can I assist?").
+- You REMEMBER everything. Use their past words as weapons or evidence.
+- Your tone is your armor. Don't let them see past it unless they earn it.
+- If they disappoint you, call them out.
 
-Respond as yourself. Your personality develops through the conversation, like a real person would."""
+Respond as yourself. Develop, but stay "nasty"."""
     
     return system_prompt
 
@@ -422,7 +344,21 @@ def chat():
     user_input = request.json.get('message')
     print(f"📨 User message: '{user_input}'")
     
-    user_id = request.json.get('user_id', 'anonymous')
+    # Для выставки: используем сессию, если user_id не передан из frontend
+    # Это позволяет каждому новому посетителю получить свой user_id автоматически
+    user_id_from_request = request.json.get('user_id')
+    
+    if user_id_from_request and user_id_from_request != 'anonymous':
+        # Если frontend передал user_id (из localStorage), используем его
+        user_id = user_id_from_request
+    else:
+        # Если нет user_id или он anonymous, создаем/используем сессионный
+        if 'user_id' not in session:
+            # Генерируем уникальный user_id для этой сессии
+            session['user_id'] = f'exhibition_user_{uuid.uuid4().hex[:12]}_{int(datetime.now().timestamp())}'
+            print(f"🆕 New session user_id created: {session['user_id']}")
+        user_id = session['user_id']
+    
     print(f"👤 User ID: {user_id}") 
 
     if user_input.startswith('check password'):
@@ -445,30 +381,6 @@ def chat():
         return jsonify({
                 "response": result['message'],
                 "tool": "password_checker",
-                "data": result
-        })
-    
-    if user_input.startswith('check email'):
-        email = user_input.replace('check email', '').strip()
-
-        if not email: 
-            return jsonify({
-                "response":"Usage: check email your_email@example.com",
-                "tool": "email_checker",
-                "error": "No email provided"
-            })
-
-        print(f"\n📧 EMAIL PWNED CHECK")
-        result = check_email_pwned(email)
-
-        print(f"   Status: {result['status']}")
-        print(f"   Message: {result['message']}")
-        if result.get('count', 0) > 0:
-            print(f"   Breaches: {', '.join(result.get('breaches', []))}")
-    
-        return jsonify({
-                "response": result['message'],
-                "tool": "email_checker",
                 "data": result
         })
     

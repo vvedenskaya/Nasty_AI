@@ -97,11 +97,29 @@ function showSuggestions(filter = '') {
 //     }
 // }
 
+// Helper function to scroll chat to bottom
+function scrollChatToBottom() {
+    // Use multiple methods to ensure scrolling works
+    setTimeout(() => {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        // Also try scrollIntoView on the last child
+        const lastChild = chatContainer.lastElementChild;
+        if (lastChild) {
+            lastChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    }, 0);
+    
+    // Also use requestAnimationFrame for better timing
+    requestAnimationFrame(() => {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    });
+}
+
 function addMessage(sender, text) {
     const messageElement = document.createElement('p');
     messageElement.innerHTML = `<strong>${sender === 'user' ? 'user@hostname:~$' : 'root@wasp:~#'}</strong> ${text}`;
     chatContainer.appendChild(messageElement);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+    scrollChatToBottom();
 }
 
 function getUserId() {
@@ -111,6 +129,26 @@ function getUserId() {
         localStorage.setItem('lisbeth_user_id', userId);
     }
     return userId;
+}
+
+function startNewSession() {
+    // Очищаем localStorage для создания нового user_id
+    localStorage.removeItem('lisbeth_user_id');
+    
+    // Очищаем чат контейнер
+    const chatContainer = document.getElementById('chat-container');
+    chatContainer.innerHTML = '';
+    
+    // Создаем новый user_id
+    const newUserId = getUserId();
+    
+    // Показываем сообщение о новой сессии
+    const messageElement = document.createElement('p');
+    messageElement.innerHTML = `<strong>root@wasp:</strong> 🆕 New session started. Your conversation history has been cleared.`;
+    chatContainer.appendChild(messageElement);
+    scrollChatToBottom();
+    
+    console.log('🔄 New session started with user_id:', newUserId);
 }
 
 async function checkEmail(email) {
@@ -171,6 +209,7 @@ function sendMessage() {
     
     // Показываем вопрос ОДИН РАЗ (with masked password if applicable)
     chatContainer.innerHTML += `<p><strong>user@hostname:~$</strong> ${displayMessage}</p>`;
+    scrollChatToBottom();
     
     // Блокируем кнопку
     sendBtn.disabled = true;
@@ -184,7 +223,7 @@ function sendMessage() {
     loadingElement.id = loadingId;
     loadingElement.innerHTML = `<span class="loading">🐇</span> Loading...`;
     chatContainer.appendChild(loadingElement);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
+    scrollChatToBottom();
     
     // ============================================================================
     // CHECK PASSWORD
@@ -226,7 +265,7 @@ function sendMessage() {
                 }
                 loadingEl.innerHTML = `<strong>🔐 Tool:</strong><pre>${formattedResult}</pre>`;
             }
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            scrollChatToBottom();
             sendBtn.disabled = false;
             sendBtn.style.opacity = '1';
         })
@@ -234,7 +273,7 @@ function sendMessage() {
             console.error('Password check error:', error);
             const loadingEl = document.getElementById(loadingId);
             loadingEl.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            scrollChatToBottom();
             sendBtn.disabled = false;
             sendBtn.style.opacity = '1';
         });
@@ -275,7 +314,7 @@ function sendMessage() {
                 }
                 loadingEl.innerHTML = `<strong>📧 Tool:</strong></p><pre>${formattedResult}</pre>`;
             }
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            scrollChatToBottom();
             sendBtn.disabled = false;
             sendBtn.style.opacity = '1';
         })
@@ -317,12 +356,13 @@ function sendMessage() {
                 newsDisplay += `</pre>`;
                 loadingEl.innerHTML = newsDisplay;
             }
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            scrollChatToBottom();
             sendBtn.disabled = false;
             sendBtn.style.opacity = '1';
         })
         .catch(error => {
             document.getElementById(loadingId).innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+            scrollChatToBottom();
             sendBtn.disabled = false;
             sendBtn.style.opacity = '1';
         });
@@ -363,7 +403,7 @@ function sendMessage() {
                     }
                 }
             }
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            scrollChatToBottom();
             sendBtn.disabled = false;
             sendBtn.style.opacity = '1';
         })
@@ -413,12 +453,13 @@ function sendMessage() {
             loadingEl.insertAdjacentHTML('afterend', optionsHtml);
         }
         
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+        scrollChatToBottom();
         sendBtn.disabled = false;
         sendBtn.style.opacity = '1';
     })
     .catch(error => {
         document.getElementById(loadingId).innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+        scrollChatToBottom();
         sendBtn.disabled = false;
         sendBtn.style.opacity = '1';
     });
