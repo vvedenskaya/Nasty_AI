@@ -9,7 +9,7 @@ import random
 import uuid
 from pathlib import Path
 from sqlalchemy.ext.mutable import MutableDict, MutableList
-from tools import get_security_news, analyze_password_strength, get_surveillance_camera, check_password_breach
+from tools import get_security_news, analyze_password_strength, get_surveillance_camera, check_password_breach, google_dorking_search
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chatbot_memory.db'
@@ -394,6 +394,58 @@ def chat():
             "tool": "surveillance",
             "data": result
         })
+    
+    # OSINT Search command
+    if user_input.lower().startswith('search '):
+        target = user_input[7:].strip()
+        if target:
+            print(f"\n🔍 OSINT SEARCH REQUESTED: {target}")
+            result = google_dorking_search(target)
+            
+            # Get a biting evaluation from Lisbeth
+            try:
+                eval_response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {
+                            "role": "system", 
+                            "content": """You are Lisbeth Salander, the abrasive hacker.
+                            Analyze the 'digital exposure' of the provided target for an OSINT map.
+                            
+                            INSTRUCTIONS:
+                            1. Evaluate how much public data exists for this name/email.
+                            2. If it's a world-famous celebrity, the PUBLICITY SCORE must be 10/10.
+                            3. Use your sharp, cynical, hacker-noir style, but focus on the 'trace' they leave in the system.
+                            4. NEVER apologize. 
+                            5. Format:
+                            PUBLICITY SCORE: [X]/10
+                            
+                            [One or two sharp, analytical sentences about their digital footprint]"""
+                        },
+                        {"role": "user", "content": f"Analyze exposure for: {target}"}
+                    ],
+                    temperature=0.7,
+                    max_tokens=150
+                )
+                lisbeth_comment = eval_response.choices[0].message.content.strip()
+                
+                # Safety check: if GPT still failed to provide the score format
+                if "PUBLICITY SCORE:" not in lisbeth_comment:
+                    lisbeth_comment = f"PUBLICITY SCORE: 0/10\n\n{lisbeth_comment}"
+                    
+            except Exception as e:
+                print(f"Error getting Lisbeth eval: {e}")
+                lisbeth_comment = "PUBLICITY SCORE: ?/10\n\nAnother ghost in the machine. Or just someone too boring to be indexed."
+
+            # Format the response
+            response_text = f"{lisbeth_comment}\n\n"
+            response_text += "I've mapped out the digital entry points. Don't leave your own fingerprints."
+            
+            return jsonify({
+                "response": response_text,
+                "tool": "osint_search",
+                "data": result
+            })
     
     if random.random() < 0.01:
         random_fact = get_random_fact()

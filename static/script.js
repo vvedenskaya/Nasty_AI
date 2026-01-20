@@ -44,7 +44,8 @@ const suggestionsContainer = document.getElementById('command-suggestions');
 const availableCommands = [
     { name: 'check password', desc: 'see if your password was leaked in data breaches', example: 'check password 123456' },
     { name: 'security news', desc: 'fetch latest cybersecurity news', example: 'security news' },
-    { name: 'surveillance', desc: 'access random surveillance camera feed', example: 'surveillance' }
+    { name: 'surveillance', desc: 'access random surveillance camera feed', example: 'surveillance' },
+    { name: 'search', desc: 'OSINT search (Facebook, LinkedIn, etc.)', example: 'search "John Doe"' }
 ];
 
 let selectedIndex = -1;
@@ -414,6 +415,78 @@ function sendMessage() {
         });
         
         return;
+    }
+    
+    // ============================================================================
+    // OSINT SEARCH
+    // ============================================================================
+    
+    if (userMessage.toLowerCase().startsWith('search ')) {
+        const target = userMessage.slice(7).trim();
+        
+        if (!target) {
+            document.getElementById(loadingId).innerHTML = `<strong>🔍 Tool:</strong> Usage: search "Name" or search email@example.com`;
+            sendBtn.disabled = false;
+            sendBtn.style.opacity = '1';
+            return;
+        }
+        
+        console.log('🔍 Performing OSINT search...');      
+        fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: userMessage, user_id: getUserId() }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            const loadingEl = document.getElementById(loadingId);
+            if (data.error) {
+                loadingEl.innerHTML = `<strong>🔍 Tool:</strong> ❌ Error: ${data.error}`;
+            } else if (data.data && data.tool === 'osint_search') {
+                // Robust parsing of the response
+                let scorePart = "PUBLICITY SCORE: 0/10";
+                let restPart = data.response;
+
+                // Try to find the line containing the score
+                const lines = data.response.split('\n');
+                const scoreLineIndex = lines.findIndex(l => l.toUpperCase().includes('PUBLICITY SCORE:'));
+                
+                if (scoreLineIndex !== -1) {
+                    scorePart = lines[scoreLineIndex];
+                    // Remove the score line and join the rest
+                    lines.splice(scoreLineIndex, 1);
+                    restPart = lines.join('\n').trim();
+                }
+
+                let htmlResponse = `<div style="border-left: 3px solid #00ff00; padding-left: 15px; margin-bottom: 15px;">`;
+                htmlResponse += `<strong style="color: #00ff00; font-size: 1.2em;">${scorePart}</strong><br><br>`;
+                htmlResponse += `<span style="font-style: italic;">${restPart.replace(/\n/g, '<br>')}</span>`;
+                htmlResponse += `</div>`;
+                
+                // Add links with better formatting
+                let linksHtml = `<div style="margin-top: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">`;
+                data.data.results.forEach(res => {
+                    linksHtml += `<a href="${res.url}" target="_blank" class="osint-link">
+                        <span style="color: #00ff00;">🔗 ${res.platform}</span>
+                    </a>`;
+                });
+                linksHtml += `</div>`;
+                
+                loadingEl.innerHTML = htmlResponse + linksHtml;
+            } else {
+                loadingEl.innerHTML = `<strong>root@wasp:</strong> ${data.response}`;
+            }
+            scrollChatToBottom();
+            sendBtn.disabled = false;
+            sendBtn.style.opacity = '1';
+        })
+        .catch(error => {
+            document.getElementById(loadingId).innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+            sendBtn.disabled = false;
+            sendBtn.style.opacity = '1';
+        });
+        
+        return; 
     }
     
     // ============================================================================

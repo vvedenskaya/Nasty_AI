@@ -28,18 +28,6 @@
 
     <div id="response-container"></div>
 <!---->
-    <div class="trigger-box">
-  <p><span class="green-text">💡 Available commands:</span></p>
-<!--        <span title="this is the tooltip.">Move your mouse over me!</span>-->
-  <ul>
-    <li><code>check password</code> — see if your password was leaked in data breaches</li>
-    <li><code>hacker news</code> — fetch latest cybersecurity news </li>
-    <li><code>surveillance</code> — random surveillance camera feed</li>
-    
-    
-
-  </ul>
-</div>
 
 
    
@@ -49,12 +37,6 @@
         import { PowerGlitch } from "https://unpkg.com/powerglitch@latest/dist/powerglitch.min.mjs";
 
         window.addEventListener('DOMContentLoaded', () => {
-            PowerGlitch.glitch('.trigger-box', {
-                playMode: 'always',
-                timing: { duration: 4000, iterations: Infinity },
-                shake: { velocity: 12, amplitudeX: 0.2, amplitudeY: 0.2 },
-                slice: { count: 6, velocity: 15, minHeight: 0.02, maxHeight: 0.15 },
-            });
 
             PowerGlitch.glitch('#input-container input[type="submit"]', {
                 playMode: 'hover',
