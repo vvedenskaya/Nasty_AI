@@ -36,6 +36,85 @@ function drawMatrix() {
 
 setInterval(drawMatrix, 35);
 
+// Modal logic
+const modalOverlay = document.getElementById('modal-overlay');
+const modalFrame = document.getElementById('modal-frame');
+const blockedMessage = document.getElementById('iframe-blocked-message');
+const fallbackLink = document.getElementById('external-link-fallback');
+
+function openInModal(url, type = 'iframe') {
+    modalOverlay.classList.remove('hidden');
+    blockedMessage.classList.add('hidden');
+    modalFrame.classList.add('hidden');
+    document.getElementById('modal-title').innerText = "[ CONNECTING... ]";
+    
+    // Clear previous content
+    modalFrame.src = '';
+    const oldImg = document.getElementById('modal-img');
+    if (oldImg) oldImg.remove();
+    
+    // Fallback link setup
+    fallbackLink.href = url;
+
+    if (type === 'mjpeg') {
+        const modalBody = document.getElementById('modal-body');
+        const img = document.createElement('img');
+        img.id = 'modal-img';
+        
+        // Timeout for camera connection
+        const timeout = setTimeout(() => {
+            if (!img.complete || img.naturalWidth === 0) {
+                img.onerror();
+            }
+        }, 7000);
+
+        img.onload = () => {
+            clearTimeout(timeout);
+            document.getElementById('modal-title').innerText = "[ SIGNAL_ESTABLISHED ]";
+            img.style.display = 'block';
+        };
+
+        img.onerror = () => {
+            clearTimeout(timeout);
+            img.style.display = 'none';
+            blockedMessage.classList.remove('hidden');
+            document.getElementById('modal-title').innerText = "[ SIGNAL LOST ]";
+            const p = blockedMessage.querySelector('p');
+            if (p) p.innerText = "🚨 ENCRYPTED OR OFFLINE 🚨";
+        };
+
+        img.src = url;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'contain';
+        img.style.background = 'black';
+        img.style.display = 'none'; // Hide until loaded
+        modalBody.appendChild(img);
+    } else {
+        // Handling for Google/Social Media (always shows fallback since they block iframes)
+        const isSearch = url.includes('google.com/search');
+        const img = document.getElementById('modal-img');
+        if (img) img.remove();
+
+        if (isSearch) {
+            blockedMessage.classList.remove('hidden');
+            modalFrame.classList.add('hidden');
+            const p = blockedMessage.querySelector('p');
+            if (p) p.innerText = "🚨 ENCRYPTED CONTENT DETECTED 🚨";
+        } else {
+            modalFrame.src = url;
+            modalFrame.classList.remove('hidden');
+        }
+    }
+}
+
+function closeModal() {
+    modalOverlay.classList.add('hidden');
+    modalFrame.src = '';
+    const img = document.getElementById('modal-img');
+    if (img) img.remove();
+}
+
 // Chat logic
 const chatContainer = document.getElementById('chat-container');
 const userInput = document.getElementById('user-input');
@@ -145,7 +224,8 @@ function startNewSession() {
     
     // Показываем сообщение о новой сессии
     const messageElement = document.createElement('p');
-    messageElement.innerHTML = `<strong>root@wasp:</strong> 🆕 New session started. Your conversation history has been cleared.`;
+    messageElement.innerHTML = `<strong>root@wasp:</strong> [SYSTEM BOOT COMPLETE]...<br>
+    <strong>LISBETH:</strong> I'm here. If you're looking for someone, try <strong>/search</strong>. If you're worried about your security, <strong>/check password</strong>. Want to stalk anybody? Try <strong>/surveillance</strong>. Type <strong>/</strong> to see the full list of my tools. Don't waste my time with boring talk.`;
     chatContainer.appendChild(messageElement);
     scrollChatToBottom();
     
@@ -391,17 +471,13 @@ function sendMessage() {
                 loadingEl.innerHTML = `<strong>❌ Error:</strong> ${data.error}`;
             } else {
                 // Make the link clickable in the chat
-                const linkHtml = data.link ? `<a href="${data.link}" target="_blank" style="color: #00ff00; text-decoration: underline;">${data.link}</a>` : '';
+                const linkHtml = data.link ? `<a href="${data.link}" onclick="event.preventDefault(); openInModal('${data.link}', '${data.type || 'iframe'}')" style="color: #00ff00; text-decoration: underline;">${data.link}</a>` : '';
                 const messageWithLink = data.message.replace(data.link, linkHtml);
                 loadingEl.innerHTML = `<strong>👁️ Tool:</strong> ${messageWithLink}`;
                 
-                // Try to open the link in a new window/tab
+                // Try to open the link in the modal automatically
                 if (data.link) {
-                    const win = window.open(data.link, '_blank');
-                    if (!win || win.closed || typeof win.closed == 'undefined') {
-                        // Popup was blocked - inform user
-                        loadingEl.innerHTML += `<br><span style="color: #ffcc00;">⚠️ Pop-up blocked! Click the link above to open manually.</span>`;
-                    }
+                    openInModal(data.link, data.type || 'iframe');
                 }
             }
             scrollChatToBottom();
@@ -466,7 +542,7 @@ function sendMessage() {
                 // Add links with better formatting
                 let linksHtml = `<div style="margin-top: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">`;
                 data.data.results.forEach(res => {
-                    linksHtml += `<a href="${res.url}" target="_blank" class="osint-link">
+                    linksHtml += `<a href="${res.url}" onclick="event.preventDefault(); openInModal('${res.url}')" class="osint-link">
                         <span style="color: #00ff00;">🔗 ${res.platform}</span>
                     </a>`;
                 });
@@ -507,10 +583,7 @@ function sendMessage() {
             
             // If the response contains a surveillance link, open it
             if (data.data && data.data.link && data.tool === 'surveillance') {
-                const win = window.open(data.data.link, '_blank');
-                if (!win || win.closed || typeof win.closed == 'undefined') {
-                    console.warn('Popup blocked by browser');
-                }
+                openInModal(data.data.link, data.data.type || 'iframe');
             }
         }
         
@@ -612,5 +685,16 @@ document.addEventListener('click', function(event) {
     if (!userInput.contains(event.target) && !suggestionsContainer.contains(event.target)) {
         suggestionsContainer.classList.add('hidden');
         selectedIndex = -1;
+    }
+});
+
+// Initial welcome message
+window.addEventListener('DOMContentLoaded', () => {
+    if (chatContainer.innerHTML.trim() === '') {
+        const messageElement = document.createElement('p');
+        messageElement.innerHTML = `<strong>root@wasp:</strong> [SYSTEM BOOT COMPLETE]...<br>
+        <strong>LISBETH:</strong> I'm here. If you're looking for someone, try <strong>/search</strong>. If you're worried about your security, <strong>/check password</strong>. Want to stalk anybody? Try <strong>/surveillance</strong>. Type <strong>/</strong> to see the full list of my tools. Don't waste my time with boring talk.`;
+        chatContainer.appendChild(messageElement);
+        scrollChatToBottom();
     }
 });

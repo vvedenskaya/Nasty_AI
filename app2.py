@@ -361,6 +361,12 @@ def chat():
     
     print(f"👤 User ID: {user_id}") 
 
+    # Help command
+    if user_input.lower() in ['help', '/help', 'what can you do?', 'commands']:
+        return jsonify({
+            "response": "I'm an expert in finding what's hidden. Use <strong>/search [name]</strong> for OSINT, <strong>/check password [pass]</strong> to audit your leaks, <strong>/security news</strong> for the latest threats, or <strong>/surveillance</strong> to peek through cameras. Or just type <strong>/</strong> to see the command list. Are we done here?"
+        })
+
     if user_input.startswith('check password'):
         password = user_input.replace('check password', '').strip()
 
@@ -387,7 +393,9 @@ def chat():
     # Check for surveillance command
     if 'surveillance' in user_input.lower() or 'survelliance' in user_input.lower():
         print(f"\n👁️ SURVEILLANCE FEED REQUESTED")
-        result = get_surveillance_camera()
+        last_cam = session.get('last_camera_url')
+        result = get_surveillance_camera(last_url=last_cam)
+        session['last_camera_url'] = result['link']
         
         return jsonify({
             "response": result['message'],
@@ -530,25 +538,7 @@ def check_password_endpoint():
         return jsonify({"error": str(e)}), 500
 
 
-# @app.route('/check-email', methods=['POST'])
-# def check_email_endpoint():
-#     """Check if email was pwned in data breaches"""
-#     try:
-#         email = request.json.get('email', '')
-#         if not email:
-#             return jsonify({"error": "Email required"}), 400
-#         print(f"\n📧 EMAIL PWNED CHECK")
-#         result = check_email_pwned(email)
-#         print(f"   Status: {result['status']}")
-#         print(f"   Message: {result['message']}")
-#         print(f"   Count: {result.get('count', 0)}")
-#         if result.get('count', 0) > 0:
-#             print(f"   Breaches: {', '.join(result.get('breaches', []))}")
-        
-#         return jsonify(result)
-#     except Exception as e:
-#         print(f"❌ ERROR in check_email_endpoint: {e}")
-#         return jsonify({"error": str(e)}), 500
+
 
 
 
