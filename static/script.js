@@ -73,6 +73,7 @@ function showSuggestions(filter = '') {
         
         div.onclick = () => {
             userInput.value = cmd.name + ' ';
+            syncMirror(); // Синхронизируем зеркало
             suggestionsContainer.classList.add('hidden');
             userInput.focus();
         };
@@ -140,6 +141,10 @@ function startNewSession() {
     const chatContainer = document.getElementById('chat-container');
     chatContainer.innerHTML = '';
     
+    // Очищаем зеркало ввода
+    const inputMirror = document.getElementById('input-mirror');
+    if (inputMirror) inputMirror.textContent = '';
+    
     // Создаем новый user_id
     const newUserId = getUserId();
     
@@ -205,6 +210,9 @@ function sendMessage() {
     
     // ОЧИЩАЕМ INPUT ПЕРВЫМ ДЕЛОМ
     userInput.value = '';
+    const inputMirror = document.getElementById('input-mirror');
+    if (inputMirror) inputMirror.textContent = '';
+    
     // Reset input type to text after sending
     userInput.type = 'text';
     passwordCommandPrefix = '';
@@ -543,11 +551,32 @@ function generateWaspResponse(message) {
 }
 
 
-// Event listener to mask password input when typing "check password"
+// Функция синхронизации зеркала с инпутом
+function syncMirror() {
+    const value = userInput.value;
+    const lowerValue = value.toLowerCase();
+    const inputMirror = document.getElementById('input-mirror');
+    
+    if (!inputMirror) return;
+
+    // Логика маскировки пароля
+    let displayValue = value;
+    const passCmd = "check password ";
+    
+    if (lowerValue.startsWith(passCmd)) {
+        const prefix = value.substring(0, passCmd.length);
+        const password = value.substring(passCmd.length);
+        displayValue = prefix + "*".repeat(password.length);
+    }
+    
+    inputMirror.textContent = displayValue;
+    inputMirror.scrollLeft = userInput.scrollLeft;
+}
+
 userInput.addEventListener('input', function(event) {
     const value = this.value;
-    const lowerValue = value.toLowerCase();
     
+    // 1. Показ подсказок команд
     if (value.startsWith('/')) {
         const query = value.slice(1);
         showSuggestions(query);
@@ -555,28 +584,12 @@ userInput.addEventListener('input', function(event) {
         suggestionsContainer.classList.add('hidden');
     }
     
-    // Check if user is typing "check password" followed by space and password
-    const passwordMatch = value.match(/^(check password)\s+(.+)$/i);
-    
-    if (passwordMatch) {
-        // User has typed "check password " followed by password
-        // Change input type to password to mask it
-        if (this.type !== 'password') {
-            this.type = 'password';
-        }
-    } else if (lowerValue.startsWith('check password')) {
-        // User is typing "check password" but no password yet
-        // Keep as text so they can see the command
-        if (this.type === 'password') {
-            this.type = 'text';
-        }
-    } else {
-        // Not a password command, ensure it's text type
-        if (this.type === 'password') {
-            this.type = 'text';
-        }
-    }
+    // 2. Синхронизируем зеркало
+    syncMirror();
 });
+
+// Синхронизация прокрутки при ручном скроллинге инпута
+userInput.addEventListener('scroll', syncMirror);
 
 // Event listener for user input submission
 userInput.addEventListener('keydown', function(event) {
@@ -595,6 +608,7 @@ userInput.addEventListener('keydown', function(event) {
             event.preventDefault();
             const cmdName = items[selectedIndex].querySelector('.command-name').textContent.slice(1);
             userInput.value = cmdName + ' ';
+            syncMirror(); // Синхронизируем зеркало
             suggestionsContainer.classList.add('hidden');
             selectedIndex = -1;
         } else if (event.key === 'Escape') {

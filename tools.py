@@ -132,8 +132,10 @@ def check_password_breach(password: str) -> dict:
         suffix = sha1_password[5:]
 
         url = f"https://api.pwnedpasswords.com/range/{prefix}"
-        headers = {'User-Agent': 'WASP-Chatbot/1.0'}
-        response = requests.get(url, headers=headers, timeout=5)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
 
         if response.status_code == 200:
             for line in response.text.split('\r\n'):
@@ -152,6 +154,7 @@ def check_password_breach(password: str) -> dict:
                 "message": "✅ Good news! This password wasn't found in any known breaches."
             }
         else:
+            print(f"   [check_password_breach] API ERROR: {response.status_code}")
             return {
                 "status": "ERROR",
                 "message": f"⚠️ API error: {response.status_code}",
@@ -159,6 +162,7 @@ def check_password_breach(password: str) -> dict:
             }
 
     except Exception as e:
+        print(f"   [check_password_breach] EXCEPTION: {e}")
         return {
             "status": "ERROR",
             "message": f"⚠️ Error: {str(e)}",

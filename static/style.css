@@ -54,14 +54,15 @@ canvas {
     display: flex;
     justify-content: space-between;
     width: 100%;
+    position: relative; /* Добавлено для позиционирования зеркала */
 }
 
 /* Выпадающий список команд */
 #command-suggestions {
     position: absolute;
     bottom: 100%; /* Прямо над полем ввода */
-    left: 10px;
-    width: calc(90% - 20px);
+    left: 0;
+    width: 90%;
     background-color: rgba(0, 0, 0, 0.95);
     border: 1px solid green;
     border-bottom: none;
@@ -96,20 +97,51 @@ canvas {
     color: rgba(0, 255, 0, 0.7);
 }
 
-/* Поле для ввода */
-#input-container input[type="text"] {
+/* Слой-зеркало для отображения текста с маскировкой пароля */
+#input-mirror {
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: 90%;
+    padding: 11px; /* Чуть больше паддинг для точного наложения */
+    color: #0F0; /* Ярко-зеленый */
+    font-size: 16px;
+    font-family: 'Courier New', Courier, monospace;
+    white-space: pre;
+    pointer-events: none; /* Клики проходят сквозь него */
+    z-index: 1;
+    overflow: hidden;
+    line-height: normal;
+    background-color: black; /* Гарантируем черный фон под зеркалом */
+}
+
+/* Поле для ввода - максимально прозрачное, чтобы не мешать зеркалу */
+#input-container input#user-input {
     width: 90%;
     padding: 10px;
-    background-color: black;
-    color: green;
+    background-color: transparent !important;
+    color: transparent !important;
+    caret-color: #0F0 !important; /* Зеленый курсор */
     border: 1px solid green;
     font-size: 16px;
+    font-family: 'Courier New', Courier, monospace;
+    position: relative;
+    z-index: 2;
+    outline: none;
+}
+
+/* Убираем стандартные стили браузера для паролей и автозаполнения */
+#input-container input#user-input:-webkit-autofill,
+#input-container input#user-input:-webkit-autofill:hover, 
+#input-container input#user-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: transparent !important;
+    transition: background-color 5000s ease-in-out 0s;
 }
 
 /* Стили для яркого placeholder */
-#input-container input[type="text"]::placeholder {
-    color: rgba(0, 255, 0, 0.8);
-    opacity: 1; /* Убираем стандартную прозрачность браузера */
+#input-container input#user-input::placeholder {
+    color: rgba(0, 255, 0, 0.4);
+    opacity: 1;
 }
 
 /* Кнопка отправки */

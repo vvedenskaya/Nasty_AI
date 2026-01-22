@@ -20,6 +20,7 @@
     <div id="input-container">
         <div id="command-suggestions" class="hidden"></div>
         <div class="input-wrapper">
+            <div id="input-mirror"></div>
             <input type="text" id="user-input" placeholder="Type / to see all commands..." required autocomplete="off">
             <input type="submit" value="Send" onclick="sendMessage()">
         </div>
@@ -32,7 +33,7 @@
 
    
     
-<script src="{{ url_for('static', filename='script.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='script.js') }}?v=3"></script>
 <script type="module">
         import { PowerGlitch } from "https://unpkg.com/powerglitch@latest/dist/powerglitch.min.mjs";
 
