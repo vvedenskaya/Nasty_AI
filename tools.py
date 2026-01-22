@@ -240,36 +240,27 @@ def check_password_breach(password: str) -> dict:
 
         return {"error": f"Error: {str(e)}"}
 
-def get_surveillance_camera(last_url=None):
-    """Returns a link to a direct MJPEG stream, avoiding the last one used"""
+def get_surveillance_camera():
+    """Returns a link to a random security camera stream"""
     import random
-    # Updated list with very stable public MJPEG streams
     cameras = [
-        {"url": "http://61.211.241.239/nphMotionJpeg?Resolution=640x480&Quality=Standard", "type": "mjpeg", "loc": "Tokyo, Japan"},
-        {"url": "http://128.10.52.41/mjpg/video.mjpg", "type": "mjpeg", "loc": "Purdue University"},
-        {"url": "http://91.190.227.11:80/cgi-bin/faststream.jpg?stream=half&fps=15&rand=15421", "type": "mjpeg", "loc": "Ski Resort"},
-        {"url": "http://158.58.130.148/mjpg/video.mjpg", "type": "mjpeg", "loc": "Venice, Italy"},
-        {"url": "http://185.10.80.33:8082/mjpg/video.mjpg", "type": "mjpeg", "loc": "Old Town Square"},
-        {"url": "http://213.193.89.202/mjpg/video.mjpg", "type": "mjpeg", "loc": "Prague, Czech Republic"},
-        {"url": "http://194.218.96.92/mjpg/video.mjpg", "type": "mjpeg", "loc": "Stockholm, Sweden"},
-        {"url": "http://195.225.101.106/mjpg/video.mjpg", "type": "mjpeg", "loc": "Swiss Alps"},
-        {"url": "http://81.149.56.38:8081/mjpg/video.mjpg", "type": "mjpeg", "loc": "UK Port Feed"},
-        {"url": "http://77.106.153.2/mjpg/video.mjpg", "type": "mjpeg", "loc": "European Highway"}
+        "http://www.insecam.org/en/view/365340/",
+        "http://www.insecam.org/en/view/466158/",
+        "http://www.insecam.org/en/view/1010039/",
+        "http://www.insecam.org/en/view/880541/",
+        "http://www.insecam.org/en/view/996756/",
+        "http://www.insecam.org/en/view/521291/",
+        "http://www.insecam.org/en/view/435359/",
+        "http://www.insecam.org/en/view/891134/",
+        "http://www.insecam.org/en/view/370430/"
     ]
     
-    # Filter out the last seen camera if possible
-    available_cameras = [c for c in cameras if c["url"] != last_url]
-    if not available_cameras: # Fallback if only 1 camera exists
-        available_cameras = cameras
-        
-    selected = random.choice(available_cameras)
+    selected = random.choice(cameras)
     
     return {
         "status": "success",
-        "link": selected["url"],
-        "type": selected["type"],
-        "location": selected["loc"],
-        "message": f"👁️ Accessing surveillance feed... Connection established: {selected['loc']}"
+        "link": selected,
+        "message": f"👁️ Accessing surveillance feed... Found one: {selected}"
     }
 
 def google_dorking_search(target: str):
@@ -293,11 +284,10 @@ def google_dorking_search(target: str):
     
     results = []
     for platform, dork in dorks.items():
-        # gbv=1 (no JS version), safe=active, udm=14 (web-only filter for clean results), igu=1 (iframe allowed)
         encoded_query = urllib.parse.quote(dork)
         results.append({
             "platform": platform,
-            "url": f"https://www.google.com/search?q={encoded_query}&gbv=1&safe=active&udm=14&igu=1"
+            "url": f"https://www.google.com/search?q={encoded_query}"
         })
         
     return {

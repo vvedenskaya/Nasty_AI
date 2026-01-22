@@ -393,9 +393,7 @@ def chat():
     # Check for surveillance command
     if 'surveillance' in user_input.lower() or 'survelliance' in user_input.lower():
         print(f"\n👁️ SURVEILLANCE FEED REQUESTED")
-        last_cam = session.get('last_camera_url')
-        result = get_surveillance_camera(last_url=last_cam)
-        session['last_camera_url'] = result['link']
+        result = get_surveillance_camera()
         
         return jsonify({
             "response": result['message'],
