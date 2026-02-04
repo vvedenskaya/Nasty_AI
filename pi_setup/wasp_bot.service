@@ -1,0 +1,14 @@
+[Unit]
+Description=Wasp Bot Application
+After=network.target
+
+[Service]
+Type=simple
+User=wasp
+WorkingDirectory=/home/wasp/wasp_bot
+ExecStart=/home/wasp/wasp_bot/venv/bin/python3 /home/wasp/wasp_bot/app2.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

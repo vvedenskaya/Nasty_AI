@@ -608,4 +608,4 @@ if __name__ == '__main__':
         print(f"📊 Tables in database: {tables}")
     print("="*70 + "\n")
     port = int(os.environ.get('PORT', 5001))
-    app.run(host='0.0.0.0', port=port, debug=True)  
+    app.run(host='0.0.0.0', port=port, debug=False)  

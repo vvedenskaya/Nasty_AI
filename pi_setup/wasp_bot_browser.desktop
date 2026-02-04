@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=WaspBotBrowser
+Exec=/home/mancy/bin/wasp-bot-browser.sh
+Terminal=false
+X-GNOME-Autostart-enabled=true
