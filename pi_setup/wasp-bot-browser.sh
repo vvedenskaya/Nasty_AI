@@ -22,5 +22,5 @@ done;
 # Additional small delay to ensure server is fully ready
 sleep 4
 
-# Launch Chromium in kiosk mode
-chromium-browser --start-maximized --kiosk --incognito --noerrdialogs --disable-infobars --no-first-run http://127.0.0.1:5001
+# Launch Chromium in maximized window (not kiosk, so user can exit)
+chromium-browser --start-maximized --incognito --noerrdialogs --disable-infobars --no-first-run http://127.0.0.1:5001

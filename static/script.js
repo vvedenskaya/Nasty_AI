@@ -400,17 +400,15 @@ function sendMessage() {
                 loadingEl.innerHTML = `<strong>❌ Error:</strong> ${data.error}`;
             } else {
                 // Make the link clickable in the chat
-                const linkHtml = data.link ? `<a href="${data.link}" target="_blank" style="color: #00ff00; text-decoration: underline;">${data.link}</a>` : '';
+                const linkHtml = data.link ? `<a href="${data.link}" target="_self" style="color: #00ff00; text-decoration: underline;">${data.link}</a>` : '';
                 const messageWithLink = data.message.replace(data.link, linkHtml);
-                loadingEl.innerHTML = `<strong>👁️ Tool:</strong> ${messageWithLink}`;
+                loadingEl.innerHTML = `<strong>👁️ Tool:</strong> ${messageWithLink}<br><br><div style="background: #1a1a1a; padding: 10px; border-left: 3px solid #ff0000; margin-top: 10px;"><strong style="color: #ffcc00;">⚠️ Tip:</strong> Use browser's <strong>Back</strong> button or press <strong>Alt+←</strong> (Mac: <strong>Cmd+←</strong>) to return to chat.</div>`;
                 
-                // Try to open the link in a new window/tab
+                // Open the link directly in the same window after a short delay
                 if (data.link) {
-                    const win = window.open(data.link, '_blank');
-                    if (!win || win.closed || typeof win.closed == 'undefined') {
-                        // Popup was blocked - inform user
-                        loadingEl.innerHTML += `<br><span style="color: #ffcc00;">⚠️ Pop-up blocked! Click the link above to open manually.</span>`;
-                    }
+                    setTimeout(() => {
+                        window.location.href = data.link;
+                    }, 2000);
                 }
             }
             scrollChatToBottom();
@@ -514,12 +512,11 @@ function sendMessage() {
         if (data.response) {
             loadingEl.innerHTML = `<strong>root@wasp:</strong> ${data.response}`;
             
-            // If the response contains a surveillance link, open it
+            // If the response contains a surveillance link, open it directly
             if (data.data && data.data.link && data.tool === 'surveillance') {
-                const win = window.open(data.data.link, '_blank');
-                if (!win || win.closed || typeof win.closed == 'undefined') {
-                    console.warn('Popup blocked by browser');
-                }
+                setTimeout(() => {
+                    window.location.href = data.data.link;
+                }, 1500);
             }
         }
         

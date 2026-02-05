@@ -564,6 +564,21 @@ def surveillance():
         print(f"❌ ERROR in surveillance: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/surveillance-view')
+def surveillance_view():
+    """Display surveillance camera in iframe with close button"""
+    try:
+        camera_url = request.args.get('url')
+        if not camera_url:
+            # If no URL provided, get a random one
+            result = get_surveillance_camera()
+            camera_url = result.get('link', '')
+        
+        return render_template('surveillance.html', camera_url=camera_url)
+    except Exception as e:
+        print(f"❌ ERROR in surveillance_view: {e}")
+        return f"Error loading surveillance feed: {str(e)}", 500
+
 
 @app.route('/user-memory/<user_id>', methods=['GET'])
 def get_memory(user_id):
