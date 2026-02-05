@@ -535,11 +535,6 @@ def check_password_endpoint():
         print(f"❌ ERROR in check_password_endpoint: {e}")
         return jsonify({"error": str(e)}), 500
 
-
-
-
-
-
 @app.route('/security-news', methods=['GET'])
 def security_news():
     try:

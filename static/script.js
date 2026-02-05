@@ -400,15 +400,35 @@ function sendMessage() {
                 loadingEl.innerHTML = `<strong>❌ Error:</strong> ${data.error}`;
             } else {
                 // Make the link clickable in the chat
-                const linkHtml = data.link ? `<a href="${data.link}" target="_self" style="color: #00ff00; text-decoration: underline;">${data.link}</a>` : '';
+                const linkHtml = data.link ? `<a href="${data.link}" target="_blank" style="color: #00ff00; text-decoration: underline;">${data.link}</a>` : '';
                 const messageWithLink = data.message.replace(data.link, linkHtml);
-                loadingEl.innerHTML = `<strong>👁️ Tool:</strong> ${messageWithLink}<br><br><div style="background: #1a1a1a; padding: 10px; border-left: 3px solid #ff0000; margin-top: 10px;"><strong style="color: #ffcc00;">⚠️ Tip:</strong> Use browser's <strong>Back</strong> button or press <strong>Alt+←</strong> (Mac: <strong>Cmd+←</strong>) to return to chat.</div>`;
+                loadingEl.innerHTML = `<strong>👁️ Tool:</strong> ${messageWithLink}<br><br><div style="background: #1a1a1a; padding: 10px; border-left: 3px solid #00ff00; margin-top: 10px;"><strong style="color: #00ff00;">💡 Camera opened in new tab.</strong> Close the tab or switch back to return to chat.</div>`;
                 
-                // Open the link directly in the same window after a short delay
+                // Open the link in a new window on the right half of screen
                 if (data.link) {
                     setTimeout(() => {
-                        window.location.href = data.link;
-                    }, 2000);
+                        // Calculate window dimensions for split-screen
+                        const screenWidth = window.screen.availWidth;
+                        const screenHeight = window.screen.availHeight;
+                        const windowWidth = Math.floor(screenWidth / 2);
+                        const windowHeight = screenHeight;
+                        const leftPosition = screenWidth - windowWidth;
+                        
+                        const newWindow = window.open(
+                            data.link, 
+                            'surveillance_camera',
+                            `width=${windowWidth},height=${windowHeight},left=${leftPosition},top=0,resizable=yes,scrollbars=yes,toolbar=no,location=no`
+                        );
+                        
+                        if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                            // Popup was blocked - show message
+                            loadingEl.innerHTML += `<br><span style="color: #ffcc00;">⚠️ Pop-up blocked! Click the link above to open manually.</span>`;
+                        } else {
+                            // Resize current window to left half
+                            window.resizeTo(windowWidth, windowHeight);
+                            window.moveTo(0, 0);
+                        }
+                    }, 1000);
                 }
             }
             scrollChatToBottom();
@@ -512,10 +532,13 @@ function sendMessage() {
         if (data.response) {
             loadingEl.innerHTML = `<strong>root@wasp:</strong> ${data.response}`;
             
-            // If the response contains a surveillance link, open it directly
+            // If the response contains a surveillance link, open it in new tab
             if (data.data && data.data.link && data.tool === 'surveillance') {
                 setTimeout(() => {
-                    window.location.href = data.data.link;
+                    const newWindow = window.open(data.data.link, '_blank');
+                    if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                        console.warn('Popup blocked by browser');
+                    }
                 }, 1500);
             }
         }
