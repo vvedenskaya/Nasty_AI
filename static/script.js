@@ -150,8 +150,7 @@ function startNewSession() {
     
     // Показываем сообщение о новой сессии
     const messageElement = document.createElement('p');
-    messageElement.innerHTML = `<strong>root@wasp:</strong> [SYSTEM BOOT COMPLETE]...<br>
-    <strong>LISBETH:</strong> I'm here. If you're looking for someone, try <strong>/search</strong>. If you're worried about your security, <strong>/check password</strong>. Want to stalk anybody? Try <strong>/surveillance</strong>. Type <strong>/</strong> to see the full list of my tools. Don't waste my time with boring talk.`;
+    messageElement.innerHTML = `<strong>root@wasp:</strong> I'm in. Your secrets aren't safe anymore. Type <strong>/</strong> and check out what I'm capable of if you dare.`;
     chatContainer.appendChild(messageElement);
     scrollChatToBottom();
     
@@ -638,8 +637,7 @@ document.addEventListener('click', function(event) {
 window.addEventListener('DOMContentLoaded', () => {
     if (chatContainer.innerHTML.trim() === '') {
         const messageElement = document.createElement('p');
-        messageElement.innerHTML = `<strong>root@wasp:</strong> [SYSTEM BOOT COMPLETE]...<br>
-        <strong>LISBETH:</strong> I'm here. If you're looking for someone, try <strong>/search</strong>. If you're worried about your security, <strong>/check password</strong>. Want to stalk anybody? Try <strong>/surveillance</strong>. Type <strong>/</strong> to see the full list of my tools. Don't waste my time with boring talk.`;
+        messageElement.innerHTML = `<strong>root@wasp:</strong> I'm in. Your secrets aren't safe anymore. Type <strong>/</strong> and check out what I'm capable of if you dare.`;
         chatContainer.appendChild(messageElement);
         scrollChatToBottom();
     }
