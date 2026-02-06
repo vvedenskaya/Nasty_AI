@@ -402,31 +402,15 @@ function sendMessage() {
                 // Make the link clickable in the chat
                 const linkHtml = data.link ? `<a href="${data.link}" target="_blank" style="color: #00ff00; text-decoration: underline;">${data.link}</a>` : '';
                 const messageWithLink = data.message.replace(data.link, linkHtml);
-                loadingEl.innerHTML = `<strong>👁️ Tool:</strong> ${messageWithLink}<br><br><div style="background: #1a1a1a; padding: 10px; border-left: 3px solid #00ff00; margin-top: 10px;"><strong style="color: #00ff00;">💡 Camera opened in new tab.</strong> Close the tab or switch back to return to chat.</div>`;
+                loadingEl.innerHTML = `<strong>👁️ Tool:</strong> ${messageWithLink}<br><br><div style="background: #1a1a1a; padding: 10px; border-left: 3px solid #00ff00; margin-top: 10px;"><strong style="color: #00ff00;">💡 Camera opened in new tab.</strong> Switch tabs or close the camera tab to return to chat.</div>`;
                 
-                // Open the link in a new window on the right half of screen
+                // Open the link in a new tab so user can easily switch back
                 if (data.link) {
                     setTimeout(() => {
-                        // Calculate window dimensions for split-screen
-                        const screenWidth = window.screen.availWidth;
-                        const screenHeight = window.screen.availHeight;
-                        const windowWidth = Math.floor(screenWidth / 2);
-                        const windowHeight = screenHeight;
-                        const leftPosition = screenWidth - windowWidth;
-                        
-                        const newWindow = window.open(
-                            data.link, 
-                            'surveillance_camera',
-                            `width=${windowWidth},height=${windowHeight},left=${leftPosition},top=0,resizable=yes,scrollbars=yes,toolbar=no,location=no`
-                        );
-                        
+                        const newWindow = window.open(data.link, '_blank');
                         if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
                             // Popup was blocked - show message
                             loadingEl.innerHTML += `<br><span style="color: #ffcc00;">⚠️ Pop-up blocked! Click the link above to open manually.</span>`;
-                        } else {
-                            // Resize current window to left half
-                            window.resizeTo(windowWidth, windowHeight);
-                            window.moveTo(0, 0);
                         }
                     }, 1000);
                 }
