@@ -150,7 +150,8 @@ function startNewSession() {
     
     // Показываем сообщение о новой сессии
     const messageElement = document.createElement('p');
-    messageElement.innerHTML = `<strong>root@wasp:</strong> I'm in. Your secrets aren't safe anymore. Type <strong>/</strong> and check out what I'm capable of if you dare.`;
+    messageElement.className = 'intro-message';
+    messageElement.innerHTML = `<strong>root@wasp:</strong><br>════════════════════════════════════════<br><span class="warning-line">⚠️  TYPE / TO SEE MY TOOLS  ⚠️</span><br>════════════════════════════════════════<br>I'm in. Your secrets aren't safe anymore.`;
     chatContainer.appendChild(messageElement);
     scrollChatToBottom();
     
@@ -409,8 +410,8 @@ function sendMessage() {
                         const newWindow = window.open(data.link, '_blank');
                         if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
                             // Popup was blocked - show message
-                            loadingEl.innerHTML += `<br><span style="color: #ffcc00;">⚠️ Pop-up blocked! Click the link above to open manually.</span>`;
-                        }
+                        loadingEl.innerHTML += `<br><span style="color: #ffcc00;">⚠️ Pop-up blocked! Click the link above to open manually.</span>`;
+                    }
                     }, 1000);
                 }
             }
@@ -520,8 +521,8 @@ function sendMessage() {
                 setTimeout(() => {
                     const newWindow = window.open(data.data.link, '_blank');
                     if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-                        console.warn('Popup blocked by browser');
-                    }
+                    console.warn('Popup blocked by browser');
+                }
                 }, 1500);
             }
         }
@@ -637,7 +638,8 @@ document.addEventListener('click', function(event) {
 window.addEventListener('DOMContentLoaded', () => {
     if (chatContainer.innerHTML.trim() === '') {
         const messageElement = document.createElement('p');
-        messageElement.innerHTML = `<strong>root@wasp:</strong> I'm in. Your secrets aren't safe anymore. Type <strong>/</strong> and check out what I'm capable of if you dare.`;
+        messageElement.className = 'intro-message';
+        messageElement.innerHTML = `<strong>root@wasp:</strong><br>════════════════════════════════════════<br><span class="warning-line">⚠️  TYPE / TO SEE MY TOOLS  ⚠️</span><br>════════════════════════════════════════<br>I'm in. Your secrets aren't safe anymore.`;
         chatContainer.appendChild(messageElement);
         scrollChatToBottom();
     }

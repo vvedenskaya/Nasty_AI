@@ -1,5 +1,5 @@
 import os
-from openai import OpenAI
+from anthropic import Anthropic
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template, session
 from flask_sqlalchemy import SQLAlchemy
@@ -21,7 +21,7 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 db = SQLAlchemy(app)
 
 load_dotenv()
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY").strip())
+client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY").strip())
 
 
 # ============================================================================
@@ -102,12 +102,11 @@ def update_user_profile(user_id, user_input):
     
     print(f"\n  📝 LEVEL 1 - Extracting PROFILE facts from: '{user_input[:60]}...'") 
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": f"""Extract ONLY personal facts from the text. Current profile: {json.dumps(user.user_profile, default=str, ensure_ascii=False)}
+        response = client.messages.create(
+            model="claude-3-haiku-20240307",
+            max_tokens=200,
+            temperature=0.2,
+            system=f"""Extract ONLY personal facts from the text. Current profile: {json.dumps(user.user_profile, default=str, ensure_ascii=False)}
 
 Return ONLY JSON (no markdown):
 {{
@@ -119,17 +118,15 @@ Return ONLY JSON (no markdown):
     "other_facts": ["other facts"]
 }}
 
-Only fields with information, rest null. Keep old values if not contradicted by new information."""
-                },
+Only fields with information, rest null. Keep old values if not contradicted by new information.""",
+            messages=[
                 {"role": "user", "content": user_input}
-            ],
-            temperature=0.2,
-            max_tokens=200
+            ]
         )
-        result_text = response.choices[0].message.content.replace("```json", "").replace("```", "").strip()       
+        result_text = response.content[0].text.replace("```json", "").replace("```", "").strip()       
         new_profile = json.loads(result_text)
         
-        print(f"    ➜ GPT extracted: {json.dumps(new_profile, ensure_ascii=False)}") 
+        print(f"    ➜ Claude extracted: {json.dumps(new_profile, ensure_ascii=False)}") 
         
         for key, value in new_profile.items():
             if value is not None:
@@ -157,12 +154,11 @@ def update_topic_summaries(user_id, user_input, ai_response):
     print(f"\n  📚 LEVEL 2 - Extracting TOPICS from: '{user_input[:60]}...'")
     
     try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": f"""Analyze the conversation. Current topics: {json.dumps(user.topic_summaries, default=str, ensure_ascii=False)} 
+        response = client.messages.create(
+            model="claude-3-haiku-20240307",
+            max_tokens=300,
+            temperature=0.3,
+            system=f"""Analyze the conversation. Current topics: {json.dumps(user.topic_summaries, default=str, ensure_ascii=False)} 
 
 Return ONLY JSON (no markdown):
 {{
@@ -170,17 +166,15 @@ Return ONLY JSON (no markdown):
     "summary": "2-3 sentences about what the user said on this topic",
     "key_positions": ["position 1", "position 2", "position 3"],
     "key_points": ["key point 1", "key point 2"]
-}}"""
-                },
+}}""",
+            messages=[
                 {"role": "user", "content": f"User said: {user_input}\n\nResponse context: {ai_response[:300]}"}
-            ],
-            temperature=0.3,
-            max_tokens=300
+            ]
         )        
-        result_text = response.choices[0].message.content.replace("```json", "").replace("```", "").strip()
+        result_text = response.content[0].text.replace("```json", "").replace("```", "").strip()
         topic_data = json.loads(result_text)
         
-        print(f"    ➜ GPT extracted topic: '{topic_data.get('main_topic')}'")
+        print(f"    ➜ Claude extracted topic: '{topic_data.get('main_topic')}'")
         print(f"    ➜ Summary: {topic_data.get('summary', 'N/A')[:80]}...")
         print(f"    ➜ Positions: {topic_data.get('key_positions', [])}")
         
@@ -410,32 +404,29 @@ def chat():
             
             # Get a biting evaluation from Lisbeth
             try:
-                eval_response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {
-                            "role": "system", 
-                            "content": """You are Lisbeth Salander, the abrasive hacker.
-                            Analyze the 'digital exposure' of the provided target for an OSINT map.
-                            
-                            INSTRUCTIONS:
-                            1. Evaluate how much public data exists for this name/email.
-                            2. If it's a world-famous celebrity, the PUBLICITY SCORE must be 10/10.
-                            3. Use your sharp, cynical, hacker-noir style, but focus on the 'trace' they leave in the system.
-                            4. NEVER apologize. 
-                            5. Format:
-                            PUBLICITY SCORE: [X]/10
-                            
-                            [One or two sharp, analytical sentences about their digital footprint]"""
-                        },
-                        {"role": "user", "content": f"Analyze exposure for: {target}"}
-                    ],
+                eval_response = client.messages.create(
+                    model="claude-3-5-sonnet-20241022",
+                    max_tokens=150,
                     temperature=0.7,
-                    max_tokens=150
+                    system="""You are Lisbeth Salander, the abrasive hacker.
+                    Analyze the 'digital exposure' of the provided target for an OSINT map.
+                    
+                    INSTRUCTIONS:
+                    1. Evaluate how much public data exists for this name/email.
+                    2. If it's a world-famous celebrity, the PUBLICITY SCORE must be 10/10.
+                    3. Use your sharp, cynical, hacker-noir style, but focus on the 'trace' they leave in the system.
+                    4. NEVER apologize. 
+                    5. Format:
+                    PUBLICITY SCORE: [X]/10
+                    
+                    [One or two sharp, analytical sentences about their digital footprint]""",
+                    messages=[
+                        {"role": "user", "content": f"Analyze exposure for: {target}"}
+                    ]
                 )
-                lisbeth_comment = eval_response.choices[0].message.content.strip()
+                lisbeth_comment = eval_response.content[0].text.strip()
                 
-                # Safety check: if GPT still failed to provide the score format
+                # Safety check: if Claude still failed to provide the score format
                 if "PUBLICITY SCORE:" not in lisbeth_comment:
                     lisbeth_comment = f"PUBLICITY SCORE: 0/10\n\n{lisbeth_comment}"
                     
@@ -469,24 +460,25 @@ def chat():
         print(f"\n📚 Using memory context from {user.conversation_count} previous conversations")
         print(f"\n🔄 Building conversation context...")
         
-        messages = [{"role": "system", "content": system_prompt}]
-
-      
+        # Build conversation messages (without system prompt)
+        conversation_messages = []
         for msg in user.recent_chat_history:
-            messages.append({
+            conversation_messages.append({
                 "role": msg["role"],
                 "content": msg["message"]
             })
 
-        messages.append({"role": "user", "content": user_input})
+        conversation_messages.append({"role": "user", "content": user_input})
         
-        print(f"📤 Sending to GPT-4o with {len(messages)} messages in context")
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages
+        print(f"📤 Sending to Claude 3.5 Sonnet with {len(conversation_messages)} messages in context")
+        response = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=4096,
+            system=system_prompt,
+            messages=conversation_messages
         )
 
-        ai_response = response.choices[0].message.content
+        ai_response = response.content[0].text
         print(f"\n📥 Response from Lisbeth: '{ai_response[:80]}...'")
 
         print("\n" + "="*70)

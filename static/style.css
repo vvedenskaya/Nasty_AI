@@ -245,3 +245,42 @@ canvas {
 .hidden {
     display: none !important;
 }
+
+/* Специальный стиль для intro сообщения */
+.intro-message {
+    font-size: 1.3em !important;
+    font-weight: bold !important;
+    color: #00ff00 !important;
+    text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+    padding: 20px;
+    border-left: 4px solid #00ff00;
+    background-color: rgba(0, 255, 0, 0.08);
+    margin: 20px 0 !important;
+    line-height: 1.8;
+    font-family: 'Courier New', Courier, monospace;
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.intro-message strong {
+    font-size: 1.1em;
+    color: #00ff00;
+    text-shadow: 0 0 15px #00ff00;
+}
+
+.intro-message .warning-line {
+    font-size: 1.2em;
+    color: #00ff00;
+    text-shadow: 0 0 15px #00ff00, 0 0 25px #00ff00;
+    letter-spacing: 1px;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+        opacity: 1;
+    }
+    50% {
+        text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00;
+        opacity: 0.95;
+    }
+}

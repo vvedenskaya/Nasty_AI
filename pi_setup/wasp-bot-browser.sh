@@ -23,4 +23,5 @@ done;
 sleep 4
 
 # Launch Chromium with visible UI (toolbar and tabs visible so user can navigate)
-chromium-browser --start-maximized --noerrdialogs --disable-infobars --no-first-run http://127.0.0.1:5001
+# Flags to prevent restore pages dialog and other interruptions
+chromium-browser --noerrdialogs --disable-infobars --no-first-run --disable-session-crashed-bubble --disable-restore-session-state http://127.0.0.1:5001
