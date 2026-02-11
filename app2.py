@@ -21,7 +21,22 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 db = SQLAlchemy(app)
 
 load_dotenv()
-client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY").strip())
+anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+
+if not anthropic_key:
+    # Fallback: try to read directly if load_dotenv failed
+    env_file = Path(__file__).parent / ".env"
+    if env_file.exists():
+        with open(env_file, "r") as f:
+            for line in f:
+                if line.strip().startswith("ANTHROPIC_API_KEY="):
+                    anthropic_key = line.split("=", 1)[1].strip().strip("'").strip('"')
+                    break
+
+if not anthropic_key:
+    raise ValueError("ANTHROPIC_API_KEY not found. Please check your .env file.")
+
+client = Anthropic(api_key=anthropic_key.strip())
 
 
 # ============================================================================
@@ -103,7 +118,7 @@ def update_user_profile(user_id, user_input):
     print(f"\n  📝 LEVEL 1 - Extracting PROFILE facts from: '{user_input[:60]}...'") 
     try:
         response = client.messages.create(
-            model="claude-3-haiku-20240307",
+            model="claude-haiku-4-5",
             max_tokens=200,
             temperature=0.2,
             system=f"""Extract ONLY personal facts from the text. Current profile: {json.dumps(user.user_profile, default=str, ensure_ascii=False)}
@@ -155,7 +170,7 @@ def update_topic_summaries(user_id, user_input, ai_response):
     
     try:
         response = client.messages.create(
-            model="claude-3-haiku-20240307",
+            model="claude-haiku-4-5",
             max_tokens=300,
             temperature=0.3,
             system=f"""Analyze the conversation. Current topics: {json.dumps(user.topic_summaries, default=str, ensure_ascii=False)} 
@@ -405,7 +420,7 @@ def chat():
             # Get a biting evaluation from Lisbeth
             try:
                 eval_response = client.messages.create(
-                    model="claude-3-5-sonnet-20241022",
+                    model="claude-sonnet-4-5",
                     max_tokens=150,
                     temperature=0.7,
                     system="""You are Lisbeth Salander, the abrasive hacker.
@@ -472,7 +487,7 @@ def chat():
         
         print(f"📤 Sending to Claude 3.5 Sonnet with {len(conversation_messages)} messages in context")
         response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-sonnet-4-5",
             max_tokens=4096,
             system=system_prompt,
             messages=conversation_messages
