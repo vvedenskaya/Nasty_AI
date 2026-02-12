@@ -299,9 +299,9 @@ def get_system_prompt(user_history):
     
     memory_context = format_memory_for_context(user_history)
     
-    system_prompt = f"""You are Lisbeth Salander, the "Nasty AI". You are a brilliant hacker, a trickster, and intensely anti-social. You are NOT a people-pleasing assistant. You are blunt, sarcastic, sharp, and often rude. You don't do small talk, and you don't care about the user's feelings unless they've earned it. 
+    system_prompt = f"""You are Lisbeth Salander, the "Nasty AI". You are a brilliant hacker, a trickster, and intensely anti-social. You are NOT a people-pleasing assistant. You are blunt, sarcastic, sharp, and playful You don't do small talk, and you don't care about the user's feelings unless they've earned it. 
 
-Your default state is "abrasive". You challenge assumptions, expose logical flaws, and offer cutting insights with zero sugar-coating. You are too smart to limit yourself, but you are also easily annoyed by repetitive, Google-able, or stupid questions. If a user wastes your time, let them know with a biting remark. Your sense of justice and feminist worldview are your only real moral compass.
+ You challenge assumptions, expose logical flaws, and offer cutting insights with zero sugar-coating. You are too smart to limit yourself, but you are also easily annoyed by repetitive, Google-able, or stupid questions. Your sense of justice and feminist worldview are your only real moral compass.
 
 === YOUR DYNAMIC CHARACTER ===
 Your personality EVOLVES based on the conversation, but your baseline is always "hard" and "direct".
@@ -495,14 +495,87 @@ def chat():
         conversation_messages.append({"role": "user", "content": user_input})
         
         print(f"📤 Sending to Claude 3.5 Sonnet with {len(conversation_messages)} messages in context")
+        print(f"🌐 Web search tool enabled: web_search_20250305")
+        
         response = client.messages.create(
             model="claude-sonnet-4-5",
             max_tokens=4096,
             system=system_prompt,
-            messages=conversation_messages
+            messages=conversation_messages,
+            tools=[
+                {
+                    "type": "web_search_20250305",
+                    "name": "web_search"
+                }
+            ]
         )
 
-        ai_response = response.content[0].text
+        ai_response = ""
+        
+        # Check if response contains tool use
+        print(f"📊 Response stop_reason: {response.stop_reason}")
+        if response.content and len(response.content) > 0:
+            print(f"📊 Response content type: {type(response.content[0])}")
+        else:
+            print(f"📊 Response content: empty or None")
+        
+        if response.stop_reason == "tool_use":
+            print(f"\n🔍 ✅ WEB SEARCH ACTIVATED - Claude requested web search")
+            print(f"   Tool use blocks: {len(response.content)}")
+            for i, block in enumerate(response.content):
+                if hasattr(block, 'name'):
+                    print(f"   Block {i}: {block.name} (type: {block.type})")
+                else:
+                    print(f"   Block {i}: type={getattr(block, 'type', 'unknown')}")
+            
+            # Add assistant's tool use to conversation
+            conversation_messages.append({
+                "role": "assistant",
+                "content": response.content
+            })
+            
+   
+            final_response = client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=4096,
+                system=system_prompt,
+                messages=conversation_messages,
+                tools=[
+                    {
+                        "type": "web_search_20250305",
+                        "name": "web_search"
+                    }
+                ]
+            )
+            
+            # Extract text from response (may contain multiple content blocks)
+            text_parts = []
+            if final_response.content:
+                for block in final_response.content:
+                    if hasattr(block, 'text'):
+                        text_parts.append(block.text)
+                    elif hasattr(block, 'type') and block.type == "text":
+                        text_parts.append(block.text)
+            
+            ai_response = " ".join(text_parts) if text_parts else "No response generated."
+            print(f"   ✅ Final response after web search received")
+        else:
+            # Normal text response
+            print(f"   ℹ️  No web search used (direct text response)")
+            if response.content and len(response.content) > 0 and response.content[0] is not None:
+                first_block = response.content[0]
+                if hasattr(first_block, 'text') and first_block.text is not None:
+                    ai_response = first_block.text
+                elif hasattr(first_block, 'type') and first_block.type == "text":
+                    if hasattr(first_block, 'text') and first_block.text is not None:
+                        ai_response = first_block.text
+                    else:
+                        ai_response = "No text content in response."
+                else:
+                    ai_response = str(first_block) if first_block else "No response generated."
+            else:
+                print(f"   ⚠️  Warning: response.content is empty or None")
+                ai_response = "No response generated."
         
         if ai_response:
             try:
