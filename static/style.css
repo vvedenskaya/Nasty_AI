@@ -248,27 +248,29 @@ canvas {
 
 /* Специальный стиль для intro сообщения */
 .intro-message {
-    font-size: 1.3em !important;
+    font-size: 0.9em !important;
     font-weight: bold !important;
     color: #00ff00 !important;
     text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
-    padding: 20px;
-    border-left: 4px solid #00ff00;
+    padding: 10px 10px 10px 0;
     background-color: rgba(0, 255, 0, 0.08);
-    margin: 20px 0 !important;
-    line-height: 1.8;
+    margin: 10px 0 !important;
+    line-height: 1.2;
     font-family: 'Courier New', Courier, monospace;
     animation: pulse-glow 2s ease-in-out infinite;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .intro-message strong {
-    font-size: 1.1em;
+    font-size: 0.9em;
     color: #00ff00;
     text-shadow: 0 0 15px #00ff00;
 }
 
 .intro-message .warning-line {
-    font-size: 1.2em;
+    font-size: 0.9em;
     color: #00ff00;
     text-shadow: 0 0 15px #00ff00, 0 0 25px #00ff00;
     letter-spacing: 1px;

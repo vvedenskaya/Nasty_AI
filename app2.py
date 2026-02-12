@@ -138,6 +138,9 @@ Only fields with information, rest null. Keep old values if not contradicted by 
                 {"role": "user", "content": user_input}
             ]
         )
+        if not response.content or len(response.content) == 0 or response.content[0] is None or not hasattr(response.content[0], 'text'):
+            print(f"    ❌ Invalid response format in update_user_profile")
+            return
         result_text = response.content[0].text.replace("```json", "").replace("```", "").strip()       
         new_profile = json.loads(result_text)
         
@@ -183,9 +186,12 @@ Return ONLY JSON (no markdown):
     "key_points": ["key point 1", "key point 2"]
 }}""",
             messages=[
-                {"role": "user", "content": f"User said: {user_input}\n\nResponse context: {ai_response[:300]}"}
+                {"role": "user", "content": f"User said: {user_input}\n\nResponse context: {ai_response[:300] if ai_response else 'No response'}"}
             ]
-        )        
+        )
+        if not response.content or len(response.content) == 0 or response.content[0] is None or not hasattr(response.content[0], 'text'):
+            print(f"    ❌ Invalid response format in update_topic_summaries")
+            return
         result_text = response.content[0].text.replace("```json", "").replace("```", "").strip()
         topic_data = json.loads(result_text)
         
@@ -439,7 +445,10 @@ def chat():
                         {"role": "user", "content": f"Analyze exposure for: {target}"}
                     ]
                 )
-                lisbeth_comment = eval_response.content[0].text.strip()
+                if not eval_response.content or len(eval_response.content) == 0 or eval_response.content[0] is None or not hasattr(eval_response.content[0], 'text'):
+                    lisbeth_comment = "PUBLICITY SCORE: ?/10\n\nError parsing response."
+                else:
+                    lisbeth_comment = eval_response.content[0].text.strip()
                 
                 # Safety check: if Claude still failed to provide the score format
                 if "PUBLICITY SCORE:" not in lisbeth_comment:
@@ -494,16 +503,30 @@ def chat():
         )
 
         ai_response = response.content[0].text
-        print(f"\n📥 Response from Lisbeth: '{ai_response[:80]}...'")
+        
+        if ai_response:
+            try:
+                print(f"\n📥 Response from Lisbeth: '{ai_response[:80]}...'")
+            except (TypeError, AttributeError) as e:
+                print(f"\n📥 Response from Lisbeth: (error formatting: {e})")
+                print(f"   ai_response type: {type(ai_response)}, value: {ai_response}")
+        else:
+            print(f"\n📥 Response from Lisbeth: (empty response)")
+            ai_response = "I couldn't generate a response. Try again."
 
         print("\n" + "="*70)
         print("💾 UPDATING MEMORY")
         print("="*70)
         
-        update_user_profile(user_id, user_input)
-        update_topic_summaries(user_id, user_input, ai_response)
-        add_to_chat_history(user_id, "user", user_input)
-        add_to_chat_history(user_id, "assistant", ai_response)
+        try:
+            update_user_profile(user_id, user_input)
+            update_topic_summaries(user_id, user_input, ai_response)
+            add_to_chat_history(user_id, "user", user_input)
+            add_to_chat_history(user_id, "assistant", ai_response)
+        except Exception as e:
+            print(f"❌ Error in memory update: {e}")
+            import traceback
+            traceback.print_exc()
         
         
         user.conversation_count += 1

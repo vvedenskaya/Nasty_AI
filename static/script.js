@@ -151,7 +151,7 @@ function startNewSession() {
     // Показываем сообщение о новой сессии
     const messageElement = document.createElement('p');
     messageElement.className = 'intro-message';
-    messageElement.innerHTML = `<strong>root@wasp:</strong><br>════════════════════════════════════════<br><span class="warning-line">⚠️  TYPE / TO SEE MY TOOLS  ⚠️</span><br>════════════════════════════════════════<br>I'm in. Your secrets aren't safe anymore.`;
+    messageElement.innerHTML = `<strong>root@wasp:</strong> <span class="warning-line">  Type / to see my tools.  </span> I'm in. Your secrets aren't safe anymore.`;
     chatContainer.appendChild(messageElement);
     scrollChatToBottom();
     
@@ -639,7 +639,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (chatContainer.innerHTML.trim() === '') {
         const messageElement = document.createElement('p');
         messageElement.className = 'intro-message';
-        messageElement.innerHTML = `<strong>root@wasp:</strong><br>════════════════════════════════════════<br><span class="warning-line">⚠️  TYPE / TO SEE MY TOOLS  ⚠️</span><br>════════════════════════════════════════<br>I'm in. Your secrets aren't safe anymore.`;
+        messageElement.innerHTML = `<strong>root@wasp:</strong> <span class="warning-line">  Type / to see my tools.  </span> I'm in. Your secrets aren't safe anymore.`;
         chatContainer.appendChild(messageElement);
         scrollChatToBottom();
     }
