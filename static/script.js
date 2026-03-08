@@ -45,7 +45,7 @@ const availableCommands = [
     { name: 'check password', desc: 'see if your password was leaked in data breaches', example: 'check password 123456' },
     { name: 'security news', desc: 'fetch latest cybersecurity news', example: 'security news' },
     { name: 'surveillance', desc: 'access random surveillance camera feed', example: 'surveillance' },
-    { name: 'search', desc: 'OSINT search (Facebook, LinkedIn, etc.)', example: 'search "John Doe"' }
+    { name: 'search', displayName: 'OSINT', desc: 'OSINT search (Facebook, LinkedIn, etc.)', example: 'search "John Doe"' }
 ];
 
 let selectedIndex = -1;
@@ -67,7 +67,7 @@ function showSuggestions(filter = '') {
         if (index === selectedIndex) div.classList.add('selected');
         
         div.innerHTML = `
-            <span class="command-name">/${cmd.name}</span>
+            <span class="command-name">/${cmd.displayName || cmd.name}</span>
             <span class="command-desc">${cmd.desc}</span>
         `;
         

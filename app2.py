@@ -9,7 +9,13 @@ import random
 import uuid
 from pathlib import Path
 from sqlalchemy.ext.mutable import MutableDict, MutableList
-from tools import get_security_news, analyze_password_strength, get_surveillance_camera, check_password_breach, google_dorking_search
+from tools import (
+    get_security_news,
+    analyze_password_strength,
+    get_surveillance_camera,
+    check_password_breach,
+    google_dorking_search,
+)
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chatbot_memory.db'
@@ -374,7 +380,7 @@ def chat():
     # Help command
     if user_input.lower() in ['help', '/help', 'what can you do?', 'commands']:
         return jsonify({
-            "response": "I'm an expert in finding what's hidden. Use <strong>/search [name]</strong> for OSINT, <strong>/check password [pass]</strong> to audit your leaks, <strong>/security news</strong> for the latest threats, or <strong>/surveillance</strong> to peek through cameras. Or just type <strong>/</strong> to see the command list. Are we done here?"
+            "response": "I'm an expert in finding what's hidden. Use <strong>/search [name]</strong> for OSINT, <strong>/check password [pass]</strong> to audit your leaks, <strong>/security news</strong> for threats, or <strong>/surveillance</strong> to peek through cameras."
         })
 
     if user_input.startswith('check password'):
@@ -462,7 +468,7 @@ def chat():
                 "tool": "osint_search",
                 "data": result
             })
-    
+
     if random.random() < 0.01:
         random_fact = get_random_fact()
         print(f"\n🎲 Random glitch triggered - returning fact")
