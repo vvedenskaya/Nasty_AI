@@ -68,6 +68,17 @@ class UserMemory(db.Model):
             'conversation_count': self.conversation_count
         }
 
+
+def initialize_database():
+    """Ensure required tables exist in all run modes (gunicorn and local)."""
+    with app.app_context():
+        db.create_all()
+
+
+# Gunicorn imports app2.py as a module and skips __main__,
+# so initialize DB tables at import time as well.
+initialize_database()
+
 # ============================================================================
 # FACTS 
 # ============================================================================
