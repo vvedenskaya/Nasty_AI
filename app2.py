@@ -18,7 +18,19 @@ from tools import (
 )
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chatbot_memory.db'
+
+def resolve_database_uri():
+    """Pick a DB URI that works in local and serverless environments."""
+    database_url = os.environ.get("DATABASE_URL")
+    if database_url:
+        return database_url
+    if os.environ.get("VERCEL"):
+        # Vercel filesystem is read-only except /tmp during invocation.
+        return "sqlite:////tmp/chatbot_memory.db"
+    return "sqlite:///chatbot_memory.db"
+
+
+app.config['SQLALCHEMY_DATABASE_URI'] = resolve_database_uri()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Для выставки: используем сессии для автоматического создания user_id
 app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'exhibition-secret-key-change-in-production')
@@ -39,10 +51,11 @@ if not anthropic_key:
                     anthropic_key = line.split("=", 1)[1].strip().strip("'").strip('"')
                     break
 
-if not anthropic_key:
-    raise ValueError("ANTHROPIC_API_KEY not found. Please check your .env file.")
-
-client = Anthropic(api_key=anthropic_key.strip())
+if anthropic_key:
+    client = Anthropic(api_key=anthropic_key.strip())
+else:
+    client = None
+    print("⚠️ ANTHROPIC_API_KEY is not set. AI chat routes will return 503.")
 
 
 # ============================================================================
@@ -71,8 +84,12 @@ class UserMemory(db.Model):
 
 def initialize_database():
     """Ensure required tables exist in all run modes (gunicorn and local)."""
-    with app.app_context():
-        db.create_all()
+    try:
+        with app.app_context():
+            db.create_all()
+    except Exception as e:
+        # Do not crash import-time in serverless environments.
+        print(f"⚠️ Database initialization failed: {e}")
 
 
 # Gunicorn imports app2.py as a module and skips __main__,
@@ -387,6 +404,12 @@ def chat():
         user_id = session['user_id']
     
     print(f"👤 User ID: {user_id}") 
+
+    if client is None:
+        return jsonify({
+            "error": "ANTHROPIC_API_KEY is not configured on the server.",
+            "response": "Server is missing AI provider key. Set ANTHROPIC_API_KEY in deployment environment variables."
+        }), 503
 
     # Help command
     if user_input.lower() in ['help', '/help', 'what can you do?', 'commands']:
