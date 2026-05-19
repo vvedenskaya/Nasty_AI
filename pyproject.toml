@@ -5,6 +5,27 @@ description = ""
 authors = ["Julia Vvedenskaya"]
 readme = "README.md"
 
+[project]
+name = "promptapp"
+version = "0.1.0"
+description = "WASP chatbot Flask app"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Julia Vvedenskaya" }]
+dependencies = [
+    "flask==3.0.3",
+    "flask-sqlalchemy==3.1.1",
+    "flask-mail==0.10.0",
+    "apscheduler==3.10.4",
+    "pytz==2024.1",
+    "anthropic==0.34.2",
+    "python-dotenv==1.0.0",
+    "gunicorn",
+    "requests",
+    "feedparser",
+    "httpx<0.28",
+]
+
 [tool.poetry.dependencies]
 python = "^3.12"
 flask = "^3.0.3"
