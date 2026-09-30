@@ -186,6 +186,17 @@ canvas {
     color: #0F0;
 }
 
+.chat-link {
+    color: #7dff7d;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    word-break: break-all;
+}
+
+.chat-link:hover {
+    color: #b8ffb8;
+}
+
 .osint-link {
     display: block;
     padding: 8px;

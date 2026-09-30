@@ -117,9 +117,31 @@ function scrollChatToBottom() {
     });
 }
 
+function escapeHtml(value) {
+    const text = value == null ? '' : String(value);
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function linkifyText(value) {
+    const escaped = escapeHtml(value);
+    const urlRegex = /(https?:\/\/[^\s<]+)/g;
+    return escaped.replace(urlRegex, (url) => {
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link">${url}</a>`;
+    });
+}
+
+function formatTextForChat(value) {
+    return linkifyText(value).replace(/\n/g, '<br>');
+}
+
 function addMessage(sender, text) {
     const messageElement = document.createElement('p');
-    messageElement.innerHTML = `<strong>${sender === 'user' ? 'user@hostname:~$' : 'root@wasp:~#'}</strong> ${text}`;
+    messageElement.innerHTML = `<strong>${sender === 'user' ? 'user@hostname:~$' : 'root@wasp:~#'}</strong> ${formatTextForChat(text)}`;
     chatContainer.appendChild(messageElement);
     scrollChatToBottom();
 }
@@ -218,7 +240,7 @@ function sendMessage() {
     passwordCommandPrefix = '';
     
     // Показываем вопрос ОДИН РАЗ (with masked password if applicable)
-    chatContainer.innerHTML += `<p><strong>user@hostname:~$</strong> ${displayMessage}</p>`;
+    chatContainer.innerHTML += `<p><strong>user@hostname:~$</strong> ${formatTextForChat(displayMessage)}</p>`;
     scrollChatToBottom();
     
     // Блокируем кнопку
@@ -273,7 +295,7 @@ function sendMessage() {
                 if (result.status === 'COMPROMISED') {
                     formattedResult += `\n\nOccurrences found: ${result.found}`;
                 }
-                loadingEl.innerHTML = `<strong>🔐 Tool:</strong><pre>${formattedResult}</pre>`;
+                loadingEl.innerHTML = `<strong>🔐 Tool:</strong><pre>${formatTextForChat(formattedResult)}</pre>`;
             }
             scrollChatToBottom();
             sendBtn.disabled = false;
@@ -322,7 +344,7 @@ function sendMessage() {
                     const breachesList = result.breaches.map(b => `  • ${b}`).join('\n');
                     formattedResult += `\n\nBreaches found: ${result.count}\n\nBreach names:\n${breachesList}`;
                 }
-                loadingEl.innerHTML = `<strong>📧 Tool:</strong></p><pre>${formattedResult}</pre>`;
+                loadingEl.innerHTML = `<strong>📧 Tool:</strong></p><pre>${formatTextForChat(formattedResult)}</pre>`;
             }
             scrollChatToBottom();
             sendBtn.disabled = false;
@@ -358,10 +380,10 @@ function sendMessage() {
             } else {
                 let newsDisplay = `<strong>📰 ${data.message}</strong></p><pre>`;
                 data.news.forEach((item, idx) => {
-                    newsDisplay += `${idx + 1}. ${item.title}\n`;
-                    newsDisplay += `   Source: ${item.source}\n`;
-                    newsDisplay += `   Date: ${item.published}\n`;
-                    newsDisplay += `   Link: ${item.link}\n\n`;
+                    newsDisplay += `${idx + 1}. ${escapeHtml(item.title)}\n`;
+                    newsDisplay += `   Source: ${escapeHtml(item.source)}\n`;
+                    newsDisplay += `   Date: ${escapeHtml(item.published)}\n`;
+                    newsDisplay += `   Link: ${linkifyText(item.link)}\n\n`;
                 });
                 newsDisplay += `</pre>`;
                 loadingEl.innerHTML = newsDisplay;
@@ -470,8 +492,8 @@ function sendMessage() {
                 }
 
                 let htmlResponse = `<div style="border-left: 3px solid #00ff00; padding-left: 15px; margin-bottom: 15px;">`;
-                htmlResponse += `<strong style="color: #00ff00; font-size: 1.2em;">${scorePart}</strong><br><br>`;
-                htmlResponse += `<span style="font-style: italic;">${restPart.replace(/\n/g, '<br>')}</span>`;
+                htmlResponse += `<strong style="color: #00ff00; font-size: 1.2em;">${escapeHtml(scorePart)}</strong><br><br>`;
+                htmlResponse += `<span style="font-style: italic;">${formatTextForChat(restPart)}</span>`;
                 htmlResponse += `</div>`;
                 
                 // Add links with better formatting
@@ -485,7 +507,7 @@ function sendMessage() {
                 
                 loadingEl.innerHTML = htmlResponse + linksHtml;
             } else {
-                loadingEl.innerHTML = `<strong>root@wasp:</strong> ${data.response}`;
+                loadingEl.innerHTML = `<strong>root@wasp:</strong> ${formatTextForChat(data.response)}`;
             }
             scrollChatToBottom();
             sendBtn.disabled = false;
@@ -514,7 +536,7 @@ function sendMessage() {
         const loadingEl = document.getElementById(loadingId);
         
         if (data.response) {
-            loadingEl.innerHTML = `<strong>root@wasp:</strong> ${data.response}`;
+            loadingEl.innerHTML = `<strong>root@wasp:</strong> ${formatTextForChat(data.response)}`;
             
             // If the response contains a surveillance link, open it in new tab
             if (data.data && data.data.link && data.tool === 'surveillance') {
